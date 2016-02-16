@@ -29,8 +29,10 @@ class RecipeFixer():
             ['"', '"', "REQUIRES_devel", "="],
             ['"', '"', "BUILD_REQUIRES", "=", "\n"],
             ['"', '"', "BUILD_PREREQUIRES", "="],
+            ['{', '}', "PATCH()", "\n", "\n"],
             ['{', '}', "BUILD()", "\n", "\n"],
-            ['{', '}', "INSTALL()", "\n", "\n"]
+            ['{', '}', "INSTALL()", "\n", "\n"],
+            ['{', '}', "TEST()", "\n", "\n"]
         ]
 
         # Setting variables
