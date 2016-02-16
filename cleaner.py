@@ -49,4 +49,4 @@ class Cleaner():
                     recipe_index += 1
 
         # Printing out the total recipe count
-        print("Cleaned " + str(recipe_index) " recipes")
+        print("Cleaned " + str(recipe_index) + " recipes")
