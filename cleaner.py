@@ -2,6 +2,7 @@ from Options import getOption
 from Recipe import RecipeFixer
 
 import os
+import timeit
 
 
 class Cleaner():
@@ -14,6 +15,8 @@ class Cleaner():
         """
         Clean the haikuports tree
         """
+        # Creating a timer for the start of the program
+        start = timeit.default_timer()
 
         # Setting build-dependent variables
         self.directory = getOption("directory")
@@ -21,8 +24,14 @@ class Cleaner():
         # Cleaning all files within the base directory
         self.clean_directory(self.directory)
 
+        # Creating a timer for the end of the program
+        stop = timeit.default_timer()
+
         # Alerting the user that the process is done
         print("All recipes have been corrected...")
+
+        # Printing the total time it took to run the program
+        print("Total time to clean " + self.directory + " : " + str(stop - start))
 
     def clean_directory(self, directory_to_clean):
         """
@@ -37,4 +46,7 @@ class Cleaner():
                     print len(path)*'---', test_file
                     current_recipe_fixer = RecipeFixer(root, test_file)
                     current_recipe_fixer.clean()
-                    exit(0)
+                    recipe_index += 1
+
+        # Printing out the total recipe count
+        print("Cleaned " + str(recipe_index) " recipes")

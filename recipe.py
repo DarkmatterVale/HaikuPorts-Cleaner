@@ -57,7 +57,7 @@ class RecipeFixer():
         self.corrected_content = self.correct_ordering()
 
         # Save new data to file
-        with open(os.path.join("/Users/vtolpegin/Desktop", self.name), 'w') as content_file:
+        with open(os.path.join(self.baseDir, self.name), 'w') as content_file:
             content_file.seek(0)
             content_file.write(self.corrected_content)
             content_file.close()
