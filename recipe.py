@@ -48,6 +48,7 @@ class RecipeFixer():
         # Read the file
         with open(os.path.join(self.baseDir, self.name), 'r') as content_file:
             self.content = content_file.read()
+            content_file.close()
 
         # Apply cleaning. This entails fixing:
         # - Ordering
@@ -57,7 +58,9 @@ class RecipeFixer():
 
         # Save new data to file
         with open(os.path.join("/Users/vtolpegin/Desktop", self.name), 'w') as content_file:
+            content_file.seek(0)
             content_file.write(self.corrected_content)
+            content_file.close()
 
     def correct_ordering(self):
         """
@@ -74,52 +77,37 @@ class RecipeFixer():
                 if component[0] == component[1]:
                     component_text = original_content_copy[original_content_copy.index(component[2]):]
 
-                    left_quote_index = component_text.find(component[0])
-                    right_quote_index = component_text[left_quote_index + 1:].find(component[1])
+                    start_index = component_text.find(component[0])
+                    end_index = component_text[start_index + 1:].find(component[1])
 
-                    while str(component_text[(left_quote_index + right_quote_index):(left_quote_index + right_quote_index + 1)]) == "\\":
-                        right_quote_index += component_text[left_quote_index + right_quote_index + 2:].find(component[1]) + 1
+                    while str(component_text[(start_index + end_index):(start_index + end_index + 1)]) == "\\":
+                        end_index += component_text[start_index + end_index + 2:].find(component[1]) + 1
 
-                    #print(component[2] + component[3] + component_text[left_quote_index:(left_quote_index + right_quote_index + 2)])
+                    #print(component[2] + component[3] + component_text[start_index:(start_index + end_index + 2)])
                     for component_part in component[4:]:
                         ordered_content += component_part
-                    ordered_content += component[2] + component[3] + component_text[left_quote_index:(left_quote_index + right_quote_index + 2)] + "\n"
+                    ordered_content += component[2] + component[3] + component_text[start_index:(start_index + end_index + 2)] + "\n"
                 else:
-                    left_index = 0
-                    right_index = 0
+                    nesting_index = 0
 
                     component_text = original_content_copy[original_content_copy.index(component[2]):]
 
-                    left_quote_index = component_text.find(component[0])
-                    right_quote_index = component_text[left_quote_index + 1:].find(component[1])
-                    left_index += 1
-                    right_index += 1
+                    start_index = component_text.find(component[0])
+                    end_index = start_index + 1
+                    nesting_index += 1
 
-                    inner_left_quote_index = left_quote_index
-                    break_while = False
-                    while not break_while:
-                        inner_left_index = len(re.findall(component[0], component_text[inner_left_quote_index + 1:inner_left_quote_index + right_quote_index + 2]))
+                    while nesting_index > 0:
+                        if component[0] in component_text[end_index:end_index + 1]:
+                            nesting_index += 1
 
-                        if inner_left_index > 0:
-                            left_index += inner_left_index
+                        elif component[1] in component_text[end_index:end_index + 1]:
+                            nesting_index -= 1
+                        end_index += 1
 
-                            temp_inner_left_quote_index = right_quote_index + 2
-                            temp_right_quote_index = component_text[inner_left_quote_index + right_quote_index + 2:].find(component[1])
-                            if temp_right_quote_index != -1:
-                                right_index += 1
-                                right_quote_index += temp_right_quote_index + 1
-                            inner_left_quote_index = temp_inner_left_quote_index
-                        else:
-                            while left_index > right_index:
-                                right_quote_index += component_text[left_quote_index + right_quote_index + 2:].find(component[1]) + 1
-                                right_index += 1
-
-                            break_while = True
-
-                    #print(component[2] + component[3] + component_text[left_quote_index:(left_quote_index + right_quote_index + 2)])
+                    #print(component[2] + component[3] + component_text[start_index:end_index])
                     for component_part in component[4:]:
                         ordered_content += component_part
-                    ordered_content += component[2] + component[3] + component_text[left_quote_index:(left_quote_index + right_quote_index + 2)] + "\n"
+                    ordered_content += component[2] + component[3] + component_text[start_index:end_index] + "\n"
 
         # Return the final components
         return ordered_content

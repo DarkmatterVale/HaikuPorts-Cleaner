@@ -28,6 +28,7 @@ class Cleaner():
         """
         Cleans the main haikuports directory & all its subfolders
         """
+        recipe_index = 0
         for root, dirs, files in os.walk(directory_to_clean):
             path = root.split('/')
             print (len(path) - 1) *'---' , os.path.basename(root)
