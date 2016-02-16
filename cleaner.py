@@ -27,11 +27,8 @@ class Cleaner():
         # Creating a timer for the end of the program
         stop = timeit.default_timer()
 
-        # Alerting the user that the process is done
-        print("All recipes have been corrected...")
-
         # Printing the total time it took to run the program
-        print("Total time to clean " + self.directory + " : " + str(stop - start))
+        print("Total time to clean " + self.directory + " : " + str(stop - start) + " seconds")
 
     def clean_directory(self, directory_to_clean):
         """
