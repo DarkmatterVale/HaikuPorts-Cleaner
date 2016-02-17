@@ -35,6 +35,14 @@ class RecipeFixer():
             ['{', '}', "TEST()", "\n", "\n"]
         ]
 
+        # Set up the current removal conditions for recipes.
+        #   This should not be in the final version. For now, we just want
+        #   to fix ordering so we do not need to worry about this.
+        self.cancel_conditions = [
+            "DEPEND",
+            "\nif"
+        ]
+
         # Setting variables
         self.baseDir = baseDir
         self.name = name
@@ -51,6 +59,10 @@ class RecipeFixer():
         with open(os.path.join(self.baseDir, self.name), 'r') as content_file:
             self.content = content_file.read()
             content_file.close()
+
+        # Determine whether to cancel the cleaning or not
+        if not self.clean_recipe(self.content):
+            return
 
         # Apply cleaning. This entails fixing:
         # - Ordering
@@ -113,3 +125,14 @@ class RecipeFixer():
 
         # Return the final components
         return ordered_content
+
+    def clean_recipe(self, content):
+        """
+        If the recipe detects something that should not be placed inside of
+        it, the cleaner should skip the recipe.
+        """
+        for remove_condition in self.cancel_conditions:
+            if remove_condition in content:
+                return False
+
+        return True
