@@ -131,8 +131,54 @@ class RecipeFixer():
         If the recipe detects something that should not be placed inside of
         it, the cleaner should skip the recipe.
         """
-        for remove_condition in self.cancel_conditions:
-            if remove_condition in content:
-                return False
+        content_copy = str(content)
+
+        # For each component, go through the recipe, find it, and correctly
+        #   place it into the new recipe
+        for component in self.component_ordering:
+            if component[2] in content_copy:
+                if component[0] == component[1]:
+                    find_index = content_copy.index(component[2])
+                    component_text = content_copy[find_index:]
+
+                    start_index = component_text.find(component[0])
+                    end_index = component_text[start_index + 1:].find(component[1])
+
+                    while str(component_text[(start_index + end_index):(start_index + end_index + 1)]) == "\\":
+                        end_index += component_text[start_index + end_index + 2:].find(component[1]) + 1
+
+                    #print(component[2] + component[3] + component_text[start_index:(start_index + end_index + 2)])
+                    ordered_content = component[2] + component[3]#+ component_text[start_index:end_index] + "\n"
+                    content_copy = content_copy[:find_index] + component_text[:(start_index - len(ordered_content))] + component_text[(start_index + end_index + 2):]
+                else:
+                    nesting_index = 0
+                    find_index = content_copy.index(component[2])
+                    component_text = content_copy[content_copy.index(component[2]):]
+
+                    start_index = component_text.find(component[0])
+                    end_index = start_index + 1
+                    nesting_index += 1
+
+                    while nesting_index > 0:
+                        if component[0] in component_text[end_index:end_index + 1]:
+                            nesting_index += 1
+
+                        elif component[1] in component_text[end_index:end_index + 1]:
+                            nesting_index -= 1
+                        end_index += 1
+
+                    #print(component[2] + component[3] + component_text[start_index:end_index])
+                    ordered_content = component[2] + component[3]#+ component_text[start_index:end_index] + "\n"
+                    content_copy = content_copy[:find_index] + component_text[:(start_index - len(ordered_content))] + component_text[(end_index + 1):]
+
+        if self.remove_whitespace(content_copy) != "":
+            return False
 
         return True
+
+    def remove_whitespace(self, text):
+        """
+        Removes all whitespace in the text and returns whatever is remaining.
+        """
+
+        return "".join(text.split())
