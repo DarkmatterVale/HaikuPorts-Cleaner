@@ -9,39 +9,162 @@ class RecipeFixer():
 
     def __init__(self, baseDir, name):
         # Set up the ordering for recipe files
-        self.component_ordering = [
-            ['"', '"', "SUMMARY", "="],
-            ['"', '"', "DESCRIPTION", "="],
-            ['"', '"', "HOMEPAGE", "="],
-            ['"', '"', "COPYRIGHT", "="],
-            ['"', '"', "LICENSE", "="],
-            ['"', '"', "REVISION", "="],
-            ['"', '"', "SOURCE_URI", "="],
-            ['"', '"', "CHECKSUM_SHA256", "="],
-            ['"', '"', "SOURCE_DIR", "="],
-            ['"', '"', "PATCHES", "="],
-            ['"', '"', "ADDITIONAL_FILES", "="],
-            ['"', '"', "ARCHITECTURES", "=", "\n"],
-            ['"', '"', "SECONDARY_ARCHITECTURES", "="],
-            ['"', '"', "PROVIDES", "=", "\n"],
-            ['"', '"', "REQUIRES", "="],
-            ['"', '"', "PROVIDES_devel", "=", "\n"],
-            ['"', '"', "REQUIRES_devel", "="],
-            ['"', '"', "BUILD_REQUIRES", "=", "\n"],
-            ['"', '"', "BUILD_PREREQUIRES", "="],
-            ['{', '}', "PATCH()", "\n", "\n"],
-            ['{', '}', "BUILD()", "\n", "\n"],
-            ['{', '}', "INSTALL()", "\n", "\n"],
-            ['{', '}', "TEST()", "\n", "\n"]
-        ]
-
-        # Set up the current removal conditions for recipes.
-        #   This should not be in the final version. For now, we just want
-        #   to fix ordering so we do not need to worry about this.
-        self.cancel_conditions = [
-            "DEPEND",
-            "\nif"
-        ]
+        self.component_ordering = {
+            "SUMMARY" : {
+                "begin_id" : '"',
+                "end_id" : '"',
+                "name" : "SUMMARY",
+                "join" : "=",
+                "pre_requests" : []
+            },
+            "DESCRIPTION" : {
+                "begin_id" : '"',
+                "end_id" : '"',
+                "name" : "DESCRIPTION",
+                "join" : "=",
+                "pre_requests" : []
+            },
+            "HOMEPAGE" : {
+                "begin_id" : '"',
+                "end_id" : '"',
+                "name" : "HOMEPAGE",
+                "join" : "=",
+                "pre_requests" : []
+            },
+            "COPYRIGHT" : {
+                "begin_id" : '"',
+                "end_id" : '"',
+                "name" : "COPYRIGHT",
+                "join" : "=",
+                "pre_requests" : []
+            },
+            "LICENSE" : {
+                "begin_id" : '"',
+                "end_id" : '"',
+                "name" : "LICENSE",
+                "join" : "=",
+                "pre_requests" : []
+            },
+            "REVISION" : {
+                "begin_id" : '"',
+                "end_id" : '"',
+                "name" : "REVISION",
+                "join" : "=",
+                "pre_requests" : []
+            },
+            "SOURCE_URI" : {
+                "begin_id" : '"',
+                "end_id" : '"',
+                "name" : "SOURCE_URI",
+                "join" : "=",
+                "pre_requests" : []
+            },
+            "CHECKSUM_SHA256" : {
+                "begin_id" : '"',
+                "end_id" : '"',
+                "name" : "CHECKSUM_SHA256",
+                "join" : "=",
+                "pre_requests" : []
+            },
+            "SOURCE_DIR" : {
+                "begin_id" : '"',
+                "end_id" : '"',
+                "name" : "SOURCE_DIR",
+                "join" : "=",
+                "pre_requests" : []
+            },
+            "PATCHES" : {
+                "begin_id" : '"',
+                "end_id" : '"',
+                "name" : "PATCHES",
+                "join" : "=",
+                "pre_requests" : []
+            },
+            "ADDITIONAL_FILES" : {
+                "begin_id" : '"',
+                "end_id" : '"',
+                "name" : "ADDITIONAL_FILES",
+                "join" : "=",
+                "pre_requests" : []
+            },
+            "ARCHITECTURES" : {
+                "begin_id" : '"',
+                "end_id" : '"',
+                "name" : "ARCHITECTURES",
+                "join" : "=",
+                "pre_requests" : ["\n"]
+            },
+            "SECONDARY_ARCHITECTURES" : {
+                "begin_id" : '"',
+                "end_id" : '"',
+                "name" : "SECONDARY_ARCHITECTURES",
+                "join" : "=",
+                "pre_requests" : []
+            },
+            "PROVIDES" : {
+                "begin_id" : '"',
+                "end_id" : '"',
+                "name" : "PROVIDES",
+                "join" : "=",
+                "pre_requests" : ["\n"]
+            },
+            "REQUIRES" : {
+                "begin_id" : '"',
+                "end_id" : '"',
+                "name" : "REQUIRES",
+                "join" : "=",
+                "pre_requests" : []
+            },
+            "PROVIDES_devel" : {
+                "begin_id" : '"',
+                "end_id" : '"',
+                "name" : "PROVIDES_devel",
+                "join" : "=",
+                "pre_requests" : ["\n"]
+            },
+            "REQUIRES_devel" : {
+                "begin_id" : '"',
+                "end_id" : '"',
+                "name" : "REQUIRES_devel",
+                "join" : "=",
+                "pre_requests" : []
+            },
+            "BUILD_REQUIRES" : {
+                "begin_id" : '"',
+                "end_id" : '"',
+                "name" : "BUILD_REQUIRES",
+                "join" : "=",
+                "pre_requests" : ["\n"]
+            },
+            "BUILD_PREREQUIRES" : {
+                "begin_id" : '"',
+                "end_id" : '"',
+                "name" : "BUILD_PREREQUIRES",
+                "join" : "=",
+                "pre_requests" : []
+            },
+            "BUILD" : {
+                "begin_id" : '{',
+                "end_id" : '}',
+                "name" : "BUILD",
+                "join" : "\n",
+                "pre_requests" : ["\n"]
+            },
+            "INSTALL" : {
+                "begin_id" : '{',
+                "end_id" : '}',
+                "name" : "INSTALL",
+                "join" : "\n",
+                "pre_requests" : ["\n"]
+            },
+            "TEST" : {
+                "begin_id" : '{',
+                "end_id" : '}',
+                "name" : "TEST",
+                "join" : "\n",
+                "pre_requests" : ["\n"]
+            }
+        }
 
         # Setting variables
         self.baseDir = baseDir
@@ -87,41 +210,39 @@ class RecipeFixer():
         #   place it into the new recipe
         for component in self.component_ordering:
             original_content_copy = str(self.content)
-            if component[2] in original_content_copy:
-                if component[0] == component[1]:
-                    component_text = original_content_copy[original_content_copy.index(component[2]):]
+            if self.component_ordering[component]["name"] in original_content_copy:
+                if self.component_ordering[component]["begin_id"] == self.component_ordering[component]["end_id"]:
+                    find_index = original_content_copy.index(self.component_ordering[component]["name"])
+                    component_text = original_content_copy[find_index:]
 
-                    start_index = component_text.find(component[0])
-                    end_index = component_text[start_index + 1:].find(component[1])
+                    start_index = component_text.find(self.component_ordering[component]["begin_id"])
+                    end_index = component_text[start_index + 1:].find(self.component_ordering[component]["end_id"])
 
                     while str(component_text[(start_index + end_index):(start_index + end_index + 1)]) == "\\":
-                        end_index += component_text[start_index + end_index + 2:].find(component[1]) + 1
+                        end_index += component_text[start_index + end_index + 2:].find(self.component_ordering[component]["end_id"]) + 1
 
-                    #print(component[2] + component[3] + component_text[start_index:(start_index + end_index + 2)])
-                    for component_part in component[4:]:
+                    for component_part in self.component_ordering[component]["pre_requests"]:
                         ordered_content += component_part
-                    ordered_content += component[2] + component[3] + component_text[start_index:(start_index + end_index + 2)] + "\n"
+                    ordered_content += self.component_ordering[component]["name"] +self. component_ordering[component]["join"] + component_text[start_index:(start_index + end_index + 2)] + "\n"
                 else:
                     nesting_index = 0
+                    find_index = original_content_copy.index(self.component_ordering[component]["name"])
+                    component_text = original_content_copy[find_index:]
 
-                    component_text = original_content_copy[original_content_copy.index(component[2]):]
-
-                    start_index = component_text.find(component[0])
+                    start_index = component_text.find(self.component_ordering[component]["begin_id"])
                     end_index = start_index + 1
                     nesting_index += 1
 
-                    while nesting_index > 0:
-                        if component[0] in component_text[end_index:end_index + 1]:
+                    while nesting_index > 0 and end_index < len(component_text):
+                        if self.component_ordering[component]["begin_id"] in component_text[end_index:end_index + 1]:
                             nesting_index += 1
-
-                        elif component[1] in component_text[end_index:end_index + 1]:
+                        elif self.component_ordering[component]["end_id"] in component_text[end_index:end_index + 1]:
                             nesting_index -= 1
                         end_index += 1
 
-                    #print(component[2] + component[3] + component_text[start_index:end_index])
-                    for component_part in component[4:]:
+                    for component_part in self.component_ordering[component]["pre_requests"]:
                         ordered_content += component_part
-                    ordered_content += component[2] + component[3] + component_text[start_index:end_index] + "\n"
+                    ordered_content += self.component_ordering[component]["name"] + self.component_ordering[component]["join"] + component_text[start_index:end_index] + "\n"
 
         # Return the final components
         return ordered_content
@@ -136,45 +257,48 @@ class RecipeFixer():
         # For each component, go through the recipe, find it, and correctly
         #   place it into the new recipe
         for component in self.component_ordering:
-            if component[2] in content_copy:
-                if component[0] == component[1]:
-                    find_index = content_copy.index(component[2])
+            if self.component_ordering[component]["name"] in content_copy:
+                if self.component_ordering[component]["begin_id"] == self.component_ordering[component]["end_id"]:
+                    find_index = content_copy.index(self.component_ordering[component]["name"])
                     component_text = content_copy[find_index:]
 
-                    start_index = component_text.find(component[0])
-                    end_index = component_text[start_index + 1:].find(component[1])
+                    start_index = component_text.find(self.component_ordering[component]["begin_id"])
+                    end_index = component_text[start_index + 1:].find(self.component_ordering[component]["end_id"])
 
                     while str(component_text[(start_index + end_index):(start_index + end_index + 1)]) == "\\":
-                        end_index += component_text[start_index + end_index + 2:].find(component[1]) + 1
+                        end_index += component_text[start_index + end_index + 2:].find(self.component_ordering[component]["end_id"]) + 1
 
-                    #print(component[2] + component[3] + component_text[start_index:(start_index + end_index + 2)])
-                    ordered_content = component[2] + component[3]#+ component_text[start_index:end_index] + "\n"
+                    ordered_content = self.component_ordering[component]["name"] + self.component_ordering[component]["join"]
                     content_copy = content_copy[:find_index] + component_text[:(start_index - len(ordered_content))] + component_text[(start_index + end_index + 2):]
                 else:
                     nesting_index = 0
-                    find_index = content_copy.index(component[2])
-                    component_text = content_copy[content_copy.index(component[2]):]
+                    find_index = content_copy.index(self.component_ordering[component]["name"])
+                    component_text = content_copy[content_copy.index(self.component_ordering[component]["name"]):]
 
-                    start_index = component_text.find(component[0])
+                    start_index = component_text.find(self.component_ordering[component]["begin_id"])
                     end_index = start_index + 1
                     nesting_index += 1
 
-                    while nesting_index > 0:
-                        if component[0] in component_text[end_index:end_index + 1]:
+                    while nesting_index > 0 and end_index < len(component_text):
+                        if self.component_ordering[component]["begin_id"] in component_text[end_index:end_index + 1]:
                             nesting_index += 1
-
-                        elif component[1] in component_text[end_index:end_index + 1]:
+                        elif self.component_ordering[component]["end_id"] in component_text[end_index:end_index + 1]:
                             nesting_index -= 1
                         end_index += 1
 
-                    #print(component[2] + component[3] + component_text[start_index:end_index])
-                    ordered_content = component[2] + component[3]#+ component_text[start_index:end_index] + "\n"
+                    ordered_content = self.component_ordering[component]["name"] + self.component_ordering[component]["join"]
                     content_copy = content_copy[:find_index] + component_text[:(start_index - len(ordered_content))] + component_text[(end_index + 1):]
 
         if self.remove_whitespace(content_copy) != "":
             return False
 
         return True
+
+    def find_previous_component_end_index(self, text, component_name):
+        """
+        Returns the ending index for the previous component
+        """
+        pass
 
     def remove_whitespace(self, text):
         """
