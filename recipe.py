@@ -9,6 +9,31 @@ class RecipeFixer():
 
     def __init__(self, baseDir, name):
         # Set up the ordering for recipe files
+        self.order = [
+            "SUMMARY",
+            "DESCRIPTION",
+            "HOMEPAGE",
+            "COPYRIGHT",
+            "LICENSE",
+            "REVISION",
+            "SOURCE_URI",
+            "CHECKSUM_SHA256",
+            "SOURCE_DIR",
+            "PATCHES",
+            "ADDITIONAL_FILES",
+            "ARCHITECTURES",
+            "SECONDARY_ARCHITECTURES",
+            "PROVIDES",
+            "REQUIRES",
+            "PROVIDES_devel",
+            "REQUIRES_devel",
+            "BUILD_REQUIRES",
+            "BUILD_PREREQUIRES",
+            "PATCH()",
+            "BUILD()",
+            "INSTALL()",
+            "TEST()",
+        ]
         self.component_ordering = {
             "SUMMARY" : {
                 "begin_id" : '"',
@@ -143,24 +168,31 @@ class RecipeFixer():
                 "join" : "=",
                 "pre_requests" : []
             },
-            "BUILD" : {
+            "PATCH()" : {
                 "begin_id" : '{',
                 "end_id" : '}',
-                "name" : "BUILD",
+                "name" : "PATCH()",
                 "join" : "\n",
                 "pre_requests" : ["\n"]
             },
-            "INSTALL" : {
+            "BUILD()" : {
                 "begin_id" : '{',
                 "end_id" : '}',
-                "name" : "INSTALL",
+                "name" : "BUILD()",
                 "join" : "\n",
                 "pre_requests" : ["\n"]
             },
-            "TEST" : {
+            "INSTALL()" : {
                 "begin_id" : '{',
                 "end_id" : '}',
-                "name" : "TEST",
+                "name" : "INSTALL()",
+                "join" : "\n",
+                "pre_requests" : ["\n"]
+            },
+            "TEST()" : {
+                "begin_id" : '{',
+                "end_id" : '}',
+                "name" : "TEST()",
                 "join" : "\n",
                 "pre_requests" : ["\n"]
             }
@@ -184,7 +216,7 @@ class RecipeFixer():
             content_file.close()
 
         # Determine whether to cancel the cleaning or not
-        if not self.clean_recipe(self.content):
+        if not self.should_clean_recipe(self.content):
             return
 
         # Apply cleaning. This entails fixing:
@@ -208,8 +240,9 @@ class RecipeFixer():
 
         # For each component, go through the recipe, find it, and correctly
         #   place it into the new recipe
-        for component in self.component_ordering:
+        for component in self.order:
             original_content_copy = str(self.content)
+            #self.extract_component(original_content_copy, component)
             if self.component_ordering[component]["name"] in original_content_copy:
                 if self.component_ordering[component]["begin_id"] == self.component_ordering[component]["end_id"]:
                     find_index = original_content_copy.index(self.component_ordering[component]["name"])
@@ -233,7 +266,7 @@ class RecipeFixer():
                     end_index = start_index + 1
                     nesting_index += 1
 
-                    while nesting_index > 0 and end_index < len(component_text):
+                    while nesting_index > 0:# and end_index < len(component_text):
                         if self.component_ordering[component]["begin_id"] in component_text[end_index:end_index + 1]:
                             nesting_index += 1
                         elif self.component_ordering[component]["end_id"] in component_text[end_index:end_index + 1]:
@@ -247,7 +280,7 @@ class RecipeFixer():
         # Return the final components
         return ordered_content
 
-    def clean_recipe(self, content):
+    def should_clean_recipe(self, content):
         """
         If the recipe detects something that should not be placed inside of
         it, the cleaner should skip the recipe.
@@ -256,7 +289,7 @@ class RecipeFixer():
 
         # For each component, go through the recipe, find it, and correctly
         #   place it into the new recipe
-        for component in self.component_ordering:
+        for component in self.order:
             if self.component_ordering[component]["name"] in content_copy:
                 if self.component_ordering[component]["begin_id"] == self.component_ordering[component]["end_id"]:
                     find_index = content_copy.index(self.component_ordering[component]["name"])
@@ -279,7 +312,7 @@ class RecipeFixer():
                     end_index = start_index + 1
                     nesting_index += 1
 
-                    while nesting_index > 0 and end_index < len(component_text):
+                    while nesting_index > 0:# and end_index < len(component_text):
                         if self.component_ordering[component]["begin_id"] in component_text[end_index:end_index + 1]:
                             nesting_index += 1
                         elif self.component_ordering[component]["end_id"] in component_text[end_index:end_index + 1]:
@@ -294,11 +327,53 @@ class RecipeFixer():
 
         return True
 
-    def find_previous_component_end_index(self, text, component_name):
+    def extract_component(self, text, component_name):
         """
-        Returns the ending index for the previous component
+        Returns the start and end index for the component with the name
+        component_name. It not only identifies the start and end index, but
+        will also grab any additional data that is critical (or in the recipe)
         """
-        pass
+        # Setting up indexes
+        component_start_index = -1
+        component_end_index = -1
+        component = component_name
+
+        # Detecting previous component
+        if self.component_ordering[component]["name"] in text:
+            if self.component_ordering[component]["begin_id"] == self.component_ordering[component]["end_id"]:
+                component_start_index = text.index(self.component_ordering[component]["name"])
+                component_text = text[component_start_index:]
+
+                start_index = component_text.find(self.component_ordering[component]["begin_id"])
+                end_index = component_text[start_index + 1:].find(self.component_ordering[component]["end_id"])
+
+                while str(component_text[(start_index + end_index):(start_index + end_index + 1)]) == "\\":
+                    end_index += component_text[start_index + end_index + 2:].find(self.component_ordering[component]["end_id"]) + 1
+
+                component_end_index = component_start_index + start_index + end_index + 2
+            else:
+                nesting_index = 0
+                component_start_index = text.index(self.component_ordering[component]["name"])
+                component_text = text[component_start_index:]
+
+                start_index = component_text.find(self.component_ordering[component]["begin_id"])
+                end_index = start_index + 1
+                nesting_index += 1
+
+                while nesting_index > 0:
+                    if self.component_ordering[component]["begin_id"] in component_text[end_index:end_index + 1]:
+                        nesting_index += 1
+                    elif self.component_ordering[component]["end_id"] in component_text[end_index:end_index + 1]:
+                        nesting_index -= 1
+                    end_index += 1
+
+                component_end_index = component_start_index + end_index + 2
+
+        print("---" + component_name + "---")
+        print(str(text[component_start_index:component_end_index]))
+        print("---DONE---")
+
+        return component_start_index, component_end_index
 
     def remove_whitespace(self, text):
         """
