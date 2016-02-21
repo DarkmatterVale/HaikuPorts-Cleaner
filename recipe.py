@@ -237,15 +237,33 @@ class RecipeFixer():
         """
         original_content = self.content
         ordered_content = ""
+        extracted_component_list = {}
 
         # For each component, go through the recipe, find it, and correctly
         #   place it into the new recipe
         for component in self.order:
             start_, end_ = self.extract_component(str(self.content), component)
             if start_ != -1 and end_ != -1:
+                extracted_component_list[component] = {
+                    "text" : str(self.content)[start_:end_] + "\n"
+                }
+
+        # Correcting mistakes in each component
+        for component in self.order:
+            # Correcting PROVIDES_devel related issues
+            if component == "PROVIDES_devel" and "PROVIDES_devel" in extracted_component_list:
+                # Make sure there is a REQUIRES_devel component in the recipe
+                if "REQUIRES_devel" not in extracted_component_list:
+                    extracted_component_list["REQUIRES_devel"] = {
+                        "text" : "REQUIRES_devel=\"\n\t\"\n"
+                    }
+
+        # Assembling final information
+        for component in self.order:
+            if component in extracted_component_list:
                 for component_part in self.component_ordering[component]["pre_requests"]:
                     ordered_content += component_part
-                ordered_content += str(self.content)[start_:end_] + "\n"
+                ordered_content += extracted_component_list[component]["text"]
 
         # Return the final components
         return ordered_content
@@ -327,7 +345,7 @@ class RecipeFixer():
                     end_index = start_index + 1
                     nesting_index += 1
 
-                    while nesting_index > 0:# and end_index < len(component_text):
+                    while nesting_index > 0:
                         if self.component_ordering[component]["begin_id"] in component_text[end_index:end_index + 1]:
                             nesting_index += 1
                         elif self.component_ordering[component]["end_id"] in component_text[end_index:end_index + 1]:
