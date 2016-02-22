@@ -7,7 +7,7 @@ class RecipeFixer():
     Parses an individual recipe and fixes it.
     """
 
-    def __init__(self, baseDir, name):
+    def __init__(self, baseDir, name, log):
         # Set up the ordering for recipe files
         self.order = [
             "SUMMARY",
@@ -198,7 +198,10 @@ class RecipeFixer():
             }
         }
 
-        # Setting variables
+        # Setting up logging information
+        self.logFile = log
+
+        # Setting general variables
         self.baseDir = baseDir
         self.name = name
 
@@ -209,8 +212,9 @@ class RecipeFixer():
         # Reset variables
         self.content = ""
         self.corrected_content = ""
+        self.logData = ""
 
-        # Read the file
+        # Read the recipe file
         with open(os.path.join(self.baseDir, self.name), 'r') as content_file:
             self.content = content_file.read()
             content_file.close()
@@ -225,11 +229,16 @@ class RecipeFixer():
         # Fix ordering
         self.corrected_content = self.correct_ordering()
 
-        # Save new data to file
+        # Save new data to the recipe file
         with open(os.path.join(self.baseDir, self.name), 'w') as content_file:
             content_file.seek(0)
             content_file.write(self.corrected_content)
             content_file.close()
+
+        # Save the log data
+        with open(os.path.join(os.getcwd(), self.logFile), 'a') as log_file:
+            log_file.write(self.logData)
+            log_file.close()
 
     def correct_ordering(self):
         """
@@ -238,6 +247,11 @@ class RecipeFixer():
         original_content = self.content
         ordered_content = ""
         extracted_component_list = {}
+
+        # Adding log data
+        self.logData += ("*" * 70) + "\n"
+        self.logData += re.sub(".recipe", "", self.name) + "\n"
+        self.logData += ("*" * 70) + "\n"
 
         # For each component, go through the recipe, find it, and correctly
         #   place it into the new recipe
@@ -255,16 +269,20 @@ class RecipeFixer():
                 # Make sure it is only one line long
                 if len(extracted_component_list[component]["text"]) > 70:
                     print("\033[91mERROR: \033[00m{}".format("SUMMARY must be less than 70 characters long"))
-                if len(extracted_component_list[component]["text"].split("\n")) >= 2:
+                    self.logData += "WARNING: SUMMARY must be less than 70 characters long\n"
+                if len(extracted_component_list[component]["text"].split("\n")) > 2:
                     extracted_component_list[component]["text"] = re.sub(r"\n", "", extracted_component_list[component]["text"]) + "\n"
+                    self.logData += "WARNING: Removing extra newline characters in SUMMARY\n"
 
                 # Make sure it does not end in a period
                 end_character_index = self.last_non_whitespace_character(extracted_component_list[component]["text"], [self.component_ordering[component]["end_id"]], 1)
                 if end_character_index != -1:
                     if "." == extracted_component_list[component]["text"][end_character_index]:
                         extracted_component_list[component]["text"] = extracted_component_list[component]["text"][:end_character_index] + extracted_component_list[component]["text"][(end_character_index + 1):]
+                        self.logData += "WARNING: Removing extra period at the end of SUMMARY\n"
             elif component == "SUMMARY" and "SUMMARY" not in extracted_component_list:
                 print("\033[91mERROR: \033[00m{}".format("Cannot find SUMMARY in recipe"))
+                self.logData += "ERROR: Cannot find SUMMARY in recipe\n"
 
             # Correcting PROVIDES_devel related issues
             if component == "PROVIDES_devel" and "PROVIDES_devel" in extracted_component_list:
@@ -273,6 +291,7 @@ class RecipeFixer():
                     extracted_component_list["REQUIRES_devel"] = {
                         "text" : "REQUIRES_devel=\"\n\t\"\n"
                     }
+                    self.logData += "WARNING: Adding missing REQUIRES_devel component\n"
 
                 # Cleaning ending of component (fixing tabs, etc)
                 end_character_index = self.last_non_whitespace_character(extracted_component_list[component]["text"], [self.component_ordering[component]["end_id"]], 1)
@@ -286,6 +305,7 @@ class RecipeFixer():
                     extracted_component_list["PROVIDES_devel"] = {
                         "text" : "PROVIDES_devel=\"\n\t\"\n"
                     }
+                    self.logData += "WARNING: Adding missing PROVIDES_devel component\n"
 
                 # Cleaning ending of component (fixing tabs, etc)
                 end_character_index = self.last_non_whitespace_character(extracted_component_list[component]["text"], [self.component_ordering[component]["end_id"]], 1)
@@ -298,6 +318,9 @@ class RecipeFixer():
                 for component_part in self.component_ordering[component]["pre_requests"]:
                     ordered_content += component_part
                 ordered_content += extracted_component_list[component]["text"]
+
+        # Cleaning up log file
+        self.logData += "\n"
 
         # Return the final components
         return ordered_content

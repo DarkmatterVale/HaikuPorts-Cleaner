@@ -21,6 +21,12 @@ class Cleaner():
         # Setting build-dependent variables
         self.directory = getOption("directory")
 
+        # Setting up log file
+        self.logFile = "log"
+        with open(os.path.join(os.getcwd(), self.logFile), 'w') as log_file:
+            log_file.write("")
+            log_file.close()
+
         # Cleaning all files within the base directory
         self.clean_directory(self.directory)
 
@@ -41,7 +47,7 @@ class Cleaner():
             for test_file in files:
                 if test_file.endswith(".recipe"):
                     print len(path)*'---', test_file
-                    current_recipe_fixer = RecipeFixer(root, test_file)
+                    current_recipe_fixer = RecipeFixer(root, test_file, self.logFile)
                     current_recipe_fixer.clean()
                     recipe_index += 1
 
