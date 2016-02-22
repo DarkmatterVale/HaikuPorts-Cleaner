@@ -250,6 +250,22 @@ class RecipeFixer():
 
         # Correcting mistakes in each component
         for component in self.order:
+            # Correcting SUMMARY related issues
+            if component == "SUMMARY" and "SUMMARY" in extracted_component_list:
+                # Make sure it is only one line long
+                if len(extracted_component_list[component]["text"]) > 70:
+                    print("\033[91mERROR: \033[00m{}".format("SUMMARY must be less than 70 characters long"))
+                if len(extracted_component_list[component]["text"].split("\n")) >= 2:
+                    extracted_component_list[component]["text"] = re.sub(r"\n", "", extracted_component_list[component]["text"]) + "\n"
+
+                # Make sure it does not end in a period
+                end_character_index = self.last_non_whitespace_character(extracted_component_list[component]["text"], [self.component_ordering[component]["end_id"]], 1)
+                if end_character_index != -1:
+                    if "." == extracted_component_list[component]["text"][end_character_index]:
+                        extracted_component_list[component]["text"] = extracted_component_list[component]["text"][:end_character_index] + extracted_component_list[component]["text"][(end_character_index + 1):]
+            elif component == "SUMMARY" and "SUMMARY" not in extracted_component_list:
+                print("\033[91mERROR: \033[00m{}".format("Cannot find SUMMARY in recipe"))
+
             # Correcting PROVIDES_devel related issues
             if component == "PROVIDES_devel" and "PROVIDES_devel" in extracted_component_list:
                 # Make sure there is a REQUIRES_devel component in the recipe
@@ -257,6 +273,24 @@ class RecipeFixer():
                     extracted_component_list["REQUIRES_devel"] = {
                         "text" : "REQUIRES_devel=\"\n\t\"\n"
                     }
+
+                # Cleaning ending of component (fixing tabs, etc)
+                end_character_index = self.last_non_whitespace_character(extracted_component_list[component]["text"], [self.component_ordering[component]["end_id"]], 1)
+                if end_character_index != -1:
+                    extracted_component_list[component]["text"] = extracted_component_list[component]["text"][:(end_character_index + 1)] + "\n\t" + self.component_ordering[component]["end_id"] + "\n"
+
+            # Correcting REQUIRES_devel related issues
+            if component == "REQUIRES_devel" and "REQUIRES_devel" in extracted_component_list:
+                # Make sure there is a PROVIDES_devel component in the recipe
+                if "PROVIDES_devel" not in extracted_component_list:
+                    extracted_component_list["PROVIDES_devel"] = {
+                        "text" : "PROVIDES_devel=\"\n\t\"\n"
+                    }
+
+                # Cleaning ending of component (fixing tabs, etc)
+                end_character_index = self.last_non_whitespace_character(extracted_component_list[component]["text"], [self.component_ordering[component]["end_id"]], 1)
+                if end_character_index != -1:
+                    extracted_component_list[component]["text"] = extracted_component_list[component]["text"][:(end_character_index + 1)] + "\n\t" + self.component_ordering[component]["end_id"] + "\n"
 
         # Assembling final information
         for component in self.order:
@@ -366,3 +400,36 @@ class RecipeFixer():
         """
 
         return "".join(text.split())
+
+    def last_non_whitespace_character(self, text, skip_character_list, max_num_chars_to_skip):
+        """
+        Returns the index of the last non-whitespace character, excluding
+        the skip characters.
+        """
+        # Setting up variables
+        character_index = -1
+        find_index = len(text) - 1
+        num_chars_skipped = 0
+
+        while find_index >= 0:
+            current_character = text[find_index]
+
+            if current_character.strip() == "":
+                find_index -= 1
+                continue
+
+            skip_test = False
+            if num_chars_skipped < max_num_chars_to_skip:
+                for skip_character in skip_character_list:
+                    if current_character == skip_character:
+                        skip_test = True
+                        num_chars_skipped += 1
+                        break
+            if skip_test:
+                find_index -= 1
+                continue
+
+            character_index = find_index
+            break
+
+        return character_index
