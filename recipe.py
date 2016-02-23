@@ -456,3 +456,58 @@ class RecipeFixer():
             break
 
         return character_index
+
+    def find_previous_character(self, text, character):
+        """
+        Returns the index of the closest to the end of the text character
+        that is "character".
+        """
+        # Setting up variables
+        character_index = -1
+        find_index = len(text) - 1
+
+        # Finding previous character
+        while find_index >= 0:
+            current_character = text[find_index]
+
+            if current_character == character:
+                character_index = find_index
+                break
+
+            find_index -= 1
+
+        # Returning index of found character
+        return character_index
+
+    def find_next_non_whitespace_character(self, text, skip_character_list, max_num_chars_to_skip):
+        """
+        Returns the index of the next non-whitespace character, excluding the
+        skip characters.
+        """
+        # Setting up variables
+        character_index = -1
+        find_index = 0
+        num_chars_skipped = 0
+
+        while find_index < len(text):
+            current_character = text[find_index]
+
+            if current_character.strip() == "":
+                find_index += 1
+                continue
+
+            skip_test = False
+            if num_chars_skipped < max_num_chars_to_skip:
+                for skip_character in skip_character_list:
+                    if current_character == skip_character:
+                        skip_test = True
+                        num_chars_skipped += 1
+                        break
+            if skip_test:
+                find_index += 1
+                continue
+
+            character_index = find_index
+            break
+
+        return character_index
