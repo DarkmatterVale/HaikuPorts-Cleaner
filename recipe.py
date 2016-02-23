@@ -275,7 +275,7 @@ class RecipeFixer():
                     self.logData += "WARNING: Removing extra newline characters in SUMMARY\n"
 
                 # Make sure it does not end in a period
-                end_character_index = self.find_previous_non_whitespace_character(extracted_component_list[component]["text"], [self.component_ordering[component]["end_id"]], 1)
+                end_character_index = self.last_non_whitespace_character(extracted_component_list[component]["text"], [self.component_ordering[component]["end_id"]], 1)
                 if end_character_index != -1:
                     if "." == extracted_component_list[component]["text"][end_character_index]:
                         extracted_component_list[component]["text"] = extracted_component_list[component]["text"][:end_character_index] + extracted_component_list[component]["text"][(end_character_index + 1):]
@@ -337,30 +337,36 @@ class RecipeFixer():
         component_end_index = -1
         component = component_name
 
-        # Detecting component
-        component_index = -1
-        for test_component_index in range(0, len(self.order)):
-            if component == self.order[test_component_index]:
-                component_index = test_component_index
-                break
-
+        # Detecting previous component
         if self.component_ordering[component]["name"] in text:
-            component_start_index = text.index(self.component_ordering[component]["name"])
-            start_index = text.find(self.component_ordering[component]["begin_id"])
-            next_component_start_index = -1
-            if component_index < len(self.order) - 1:
-                loop_index = 1
-                while (loop_index + component_index) < len(self.order) and next_component_start_index == -1:
-                    next_component_start_index = text.find(self.order[component_index + loop_index])
-                    loop_index += 1
+            if self.component_ordering[component]["begin_id"] == self.component_ordering[component]["end_id"]:
+                component_start_index = text.index(self.component_ordering[component]["name"])
+                component_text = text[component_start_index:]
 
-            end_index = len(text)
-            if next_component_start_index != -1:
-                end_index = self.find_previous_character(text[component_start_index:next_component_start_index], self.component_ordering[component]["end_id"])
+                start_index = component_text.find(self.component_ordering[component]["begin_id"])
+                end_index = component_text[start_index + 1:].find(self.component_ordering[component]["end_id"])
+
+                while str(component_text[(start_index + end_index):(start_index + end_index + 1)]) == "\\":
+                    end_index += component_text[start_index + end_index + 2:].find(self.component_ordering[component]["end_id"]) + 1
+
+                component_end_index = component_start_index + start_index + end_index + 2
             else:
-                end_index = self.find_previous_character(text[component_start_index:], self.component_ordering[component]["end_id"])
+                nesting_index = 0
+                component_start_index = text.index(self.component_ordering[component]["name"])
+                component_text = text[component_start_index:]
 
-            component_end_index = component_start_index + end_index + 1
+                start_index = component_text.find(self.component_ordering[component]["begin_id"])
+                end_index = start_index + 1
+                nesting_index += 1
+
+                while nesting_index > 0:
+                    if self.component_ordering[component]["begin_id"] in component_text[end_index:end_index + 1]:
+                        nesting_index += 1
+                    elif self.component_ordering[component]["end_id"] in component_text[end_index:end_index + 1]:
+                        nesting_index -= 1
+                    end_index += 1
+
+                component_end_index = component_start_index + end_index
 
         return component_start_index, component_end_index
 
@@ -371,14 +377,42 @@ class RecipeFixer():
         """
         content_copy = str(content)
 
-        # For each component, go through the recipe, find it, and remove
-        #   it from the cleaner
+        # For each component, go through the recipe, find it, and correctly
+        #   place it into the new recipe
         for component in self.order:
-            start_index, end_index = self.extract_component(content_copy, component)
-            content_copy = content_copy[:start_index] + content_copy[end_index + 1:]
+            if self.component_ordering[component]["name"] in content_copy:
+                if self.component_ordering[component]["begin_id"] == self.component_ordering[component]["end_id"]:
+                    find_index = content_copy.index(self.component_ordering[component]["name"])
+                    component_text = content_copy[find_index:]
+
+                    start_index = component_text.find(self.component_ordering[component]["begin_id"])
+                    end_index = component_text[start_index + 1:].find(self.component_ordering[component]["end_id"])
+
+                    while str(component_text[(start_index + end_index):(start_index + end_index + 1)]) == "\\":
+                        end_index += component_text[start_index + end_index + 2:].find(self.component_ordering[component]["end_id"]) + 1
+
+                    ordered_content = self.component_ordering[component]["name"] + self.component_ordering[component]["join"]
+                    content_copy = content_copy[:find_index] + component_text[:(start_index - len(ordered_content))] + component_text[(start_index + end_index + 2):]
+                else:
+                    nesting_index = 0
+                    find_index = content_copy.index(self.component_ordering[component]["name"])
+                    component_text = content_copy[content_copy.index(self.component_ordering[component]["name"]):]
+
+                    start_index = component_text.find(self.component_ordering[component]["begin_id"])
+                    end_index = start_index + 1
+                    nesting_index += 1
+
+                    while nesting_index > 0:
+                        if self.component_ordering[component]["begin_id"] in component_text[end_index:end_index + 1]:
+                            nesting_index += 1
+                        elif self.component_ordering[component]["end_id"] in component_text[end_index:end_index + 1]:
+                            nesting_index -= 1
+                        end_index += 1
+
+                    ordered_content = self.component_ordering[component]["name"] + self.component_ordering[component]["join"]
+                    content_copy = content_copy[:find_index] + component_text[:(start_index - len(ordered_content))] + component_text[(end_index + 1):]
 
         if self.remove_whitespace(content_copy) != "":
-            self.logData += "ERROR: Cannot parse recipe file with unknown content"
             return False
 
         return True
@@ -390,7 +424,7 @@ class RecipeFixer():
 
         return "".join(text.split())
 
-    def find_previous_non_whitespace_character(self, text, skip_character_list, max_num_chars_to_skip):
+    def last_non_whitespace_character(self, text, skip_character_list, max_num_chars_to_skip):
         """
         Returns the index of the last non-whitespace character, excluding
         the skip characters.
@@ -416,61 +450,6 @@ class RecipeFixer():
                         break
             if skip_test:
                 find_index -= 1
-                continue
-
-            character_index = find_index
-            break
-
-        return character_index
-
-    def find_previous_character(self, text, character):
-        """
-        Returns the index of the closest to the end of the text character
-        that is "character".
-        """
-        # Setting up variables
-        character_index = -1
-        find_index = len(text) - 1
-
-        # Finding previous character
-        while find_index >= 0:
-            current_character = text[find_index]
-
-            if current_character == character:
-                character_index = find_index
-                break
-
-            find_index -= 1
-
-        # Returning index of found character
-        return character_index
-
-    def find_next_non_whitespace_character(self, text, skip_character_list, max_num_chars_to_skip):
-        """
-        Returns the index of the next non-whitespace character, excluding the
-        skip characters.
-        """
-        # Setting up variables
-        character_index = -1
-        find_index = 0
-        num_chars_skipped = 0
-
-        while find_index < len(text):
-            current_character = text[find_index]
-
-            if current_character.strip() == "":
-                find_index += 1
-                continue
-
-            skip_test = False
-            if num_chars_skipped < max_num_chars_to_skip:
-                for skip_character in skip_character_list:
-                    if current_character == skip_character:
-                        skip_test = True
-                        num_chars_skipped += 1
-                        break
-            if skip_test:
-                find_index += 1
                 continue
 
             character_index = find_index
