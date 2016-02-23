@@ -294,7 +294,7 @@ class RecipeFixer():
                     self.logData += "WARNING: Adding missing REQUIRES_devel component\n"
 
                 # Cleaning ending of component (fixing tabs, etc)
-                end_character_index = self.last_non_whitespace_character(extracted_component_list[component]["text"], [self.component_ordering[component]["end_id"]], 1)
+                end_character_index = self.find_previous_non_whitespace_character(extracted_component_list[component]["text"], [self.component_ordering[component]["end_id"]], 1)
                 if end_character_index != -1:
                     extracted_component_list[component]["text"] = extracted_component_list[component]["text"][:(end_character_index + 1)] + "\n\t" + self.component_ordering[component]["end_id"] + "\n"
 
@@ -308,7 +308,7 @@ class RecipeFixer():
                     self.logData += "WARNING: Adding missing PROVIDES_devel component\n"
 
                 # Cleaning ending of component (fixing tabs, etc)
-                end_character_index = self.last_non_whitespace_character(extracted_component_list[component]["text"], [self.component_ordering[component]["end_id"]], 1)
+                end_character_index = self.find_previous_non_whitespace_character(extracted_component_list[component]["text"], [self.component_ordering[component]["end_id"]], 1)
                 if end_character_index != -1:
                     extracted_component_list[component]["text"] = extracted_component_list[component]["text"][:(end_character_index + 1)] + "\n\t" + self.component_ordering[component]["end_id"] + "\n"
 
