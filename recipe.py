@@ -255,12 +255,18 @@ class RecipeFixer():
 
         # For each component, go through the recipe, find it, and correctly
         #   place it into the new recipe
+        extraction_text = str(original_content)
         for component in self.order:
             start_, end_ = self.extract_component(str(self.content), component)
-            if start_ != -1 and end_ != -1:
-                extracted_component_list[component] = {
-                    "text" : str(self.content)[start_:end_] + "\n"
-                }
+            start_text, end_test = self.extract_component(extraction_text, component)
+
+            if start_text != -1 and end_test != -1:
+                if len(self.remove_whitespace(extraction_text[:start_text])) == 0:
+                    extraction_text = extraction_text[:start_text] + extraction_text[end_test + 1:]
+
+                    extracted_component_list[component] = {
+                        "text" : str(self.content)[start_:end_] + "\n"
+                    }
 
         # Correcting mistakes in each component
         for component in self.order:
@@ -268,14 +274,14 @@ class RecipeFixer():
             if component == "SUMMARY" and "SUMMARY" in extracted_component_list:
                 # Make sure it is only one line long
                 if len(extracted_component_list[component]["text"]) > 70:
-                    print("\033[91mERROR: \033[00m{}".format("SUMMARY must be less than 70 characters long"))
+                    print("\033[91mERROR: \033[00m{}".format("SUMMARY must be less than 80 characters long"))
                     self.logData += "WARNING: SUMMARY must be less than 70 characters long\n"
                 if len(extracted_component_list[component]["text"].split("\n")) > 2:
                     extracted_component_list[component]["text"] = re.sub(r"\n", "", extracted_component_list[component]["text"]) + "\n"
                     self.logData += "WARNING: Removing extra newline characters in SUMMARY\n"
 
                 # Make sure it does not end in a period
-                end_character_index = self.last_non_whitespace_character(extracted_component_list[component]["text"], [self.component_ordering[component]["end_id"]], 1)
+                end_character_index = self.find_previous_non_whitespace_character(extracted_component_list[component]["text"], [self.component_ordering[component]["end_id"]], 1)
                 if end_character_index != -1:
                     if "." == extracted_component_list[component]["text"][end_character_index]:
                         extracted_component_list[component]["text"] = extracted_component_list[component]["text"][:end_character_index] + extracted_component_list[component]["text"][(end_character_index + 1):]
@@ -284,8 +290,59 @@ class RecipeFixer():
                 print("\033[91mERROR: \033[00m{}".format("Cannot find SUMMARY in recipe"))
                 self.logData += "ERROR: Cannot find SUMMARY in recipe\n"
 
+            # Correcting PROVIDES related issues
+            if component == "PROVIDES" and "PROVIDES" in extracted_component_list:
+                # Removing extra new line characters
+                lines = extracted_component_list[component]["text"].split("\n")
+                for line_index in range(0, len(lines)):
+                    if self.remove_whitespace(lines[line_index]) == "":
+                        lines[line_index] = ""
+                    else:
+                        lines[line_index] += "\n"
+                extracted_component_list[component]["text"] = "".join(lines)
+
+                # Cleaning ending of component (fixing tabs, etc)
+                end_character_index = self.find_previous_non_whitespace_character(extracted_component_list[component]["text"], [self.component_ordering[component]["end_id"]], 1)
+                if end_character_index != -1:
+                    extracted_component_list[component]["text"] = extracted_component_list[component]["text"][:(end_character_index + 1)] + "\n\t" + self.component_ordering[component]["end_id"] + "\n"
+            elif component == "PROVIDES" and "PROVIDES" not in extracted_component_list:
+                extracted_component_list["PROVIDES"] = {
+                    "text" : "PROVIDES=\"\n\t" + re.sub("-.*", "", self.name) + " = $portVersion\n\t\"\n"
+                }
+                self.logData += "WARNING: Adding dummy missing PROVIDES in recipe"
+
+            # Correcting REQUIRES related issues
+            if component == "REQUIRES" and "REQUIRES" in extracted_component_list:
+                # Removing extra new line characters
+                lines = extracted_component_list[component]["text"].split("\n")
+                for line_index in range(0, len(lines)):
+                    if self.remove_whitespace(lines[line_index]) == "":
+                        lines[line_index] = ""
+                    else:
+                        lines[line_index] += "\n"
+                extracted_component_list[component]["text"] = "".join(lines)
+
+                # Cleaning ending of component (fixing tabs, etc)
+                end_character_index = self.find_previous_non_whitespace_character(extracted_component_list[component]["text"], [self.component_ordering[component]["end_id"]], 1)
+                if end_character_index != -1:
+                    extracted_component_list[component]["text"] = extracted_component_list[component]["text"][:(end_character_index + 1)] + "\n\t" + self.component_ordering[component]["end_id"] + "\n"
+            elif component == "REQUIRES" and "REQUIRES" not in extracted_component_list:
+                extracted_component_list["REQUIRES"] = {
+                    "text" : "REQUIRES=\"\n\thaiku\n\t\"\n"
+                }
+                self.logData += "WARNING: Adding dummy missing REQUIRES in recipe"
+
             # Correcting PROVIDES_devel related issues
             if component == "PROVIDES_devel" and "PROVIDES_devel" in extracted_component_list:
+                # Removing extra new line characters
+                lines = extracted_component_list[component]["text"].split("\n")
+                for line_index in range(0, len(lines)):
+                    if self.remove_whitespace(lines[line_index]) == "":
+                        lines[line_index] = ""
+                    else:
+                        lines[line_index] += "\n"
+                extracted_component_list[component]["text"] = "".join(lines)
+
                 # Make sure there is a REQUIRES_devel component in the recipe
                 if "REQUIRES_devel" not in extracted_component_list:
                     extracted_component_list["REQUIRES_devel"] = {
@@ -300,6 +357,15 @@ class RecipeFixer():
 
             # Correcting REQUIRES_devel related issues
             if component == "REQUIRES_devel" and "REQUIRES_devel" in extracted_component_list:
+                # Removing extra new line characters
+                lines = extracted_component_list[component]["text"].split("\n")
+                for line_index in range(0, len(lines)):
+                    if self.remove_whitespace(lines[line_index]) == "":
+                        lines[line_index] = ""
+                    else:
+                        lines[line_index] += "\n"
+                extracted_component_list[component]["text"] = "".join(lines)
+
                 # Make sure there is a PROVIDES_devel component in the recipe
                 if "PROVIDES_devel" not in extracted_component_list:
                     extracted_component_list["PROVIDES_devel"] = {
@@ -377,42 +443,16 @@ class RecipeFixer():
         """
         content_copy = str(content)
 
-        # For each component, go through the recipe, find it, and correctly
-        #   place it into the new recipe
+        # For each component, go through the recipe, find it, and remove
+        #   it from the cleaner
         for component in self.order:
-            if self.component_ordering[component]["name"] in content_copy:
-                if self.component_ordering[component]["begin_id"] == self.component_ordering[component]["end_id"]:
-                    find_index = content_copy.index(self.component_ordering[component]["name"])
-                    component_text = content_copy[find_index:]
-
-                    start_index = component_text.find(self.component_ordering[component]["begin_id"])
-                    end_index = component_text[start_index + 1:].find(self.component_ordering[component]["end_id"])
-
-                    while str(component_text[(start_index + end_index):(start_index + end_index + 1)]) == "\\":
-                        end_index += component_text[start_index + end_index + 2:].find(self.component_ordering[component]["end_id"]) + 1
-
-                    ordered_content = self.component_ordering[component]["name"] + self.component_ordering[component]["join"]
-                    content_copy = content_copy[:find_index] + component_text[:(start_index - len(ordered_content))] + component_text[(start_index + end_index + 2):]
-                else:
-                    nesting_index = 0
-                    find_index = content_copy.index(self.component_ordering[component]["name"])
-                    component_text = content_copy[content_copy.index(self.component_ordering[component]["name"]):]
-
-                    start_index = component_text.find(self.component_ordering[component]["begin_id"])
-                    end_index = start_index + 1
-                    nesting_index += 1
-
-                    while nesting_index > 0:
-                        if self.component_ordering[component]["begin_id"] in component_text[end_index:end_index + 1]:
-                            nesting_index += 1
-                        elif self.component_ordering[component]["end_id"] in component_text[end_index:end_index + 1]:
-                            nesting_index -= 1
-                        end_index += 1
-
-                    ordered_content = self.component_ordering[component]["name"] + self.component_ordering[component]["join"]
-                    content_copy = content_copy[:find_index] + component_text[:(start_index - len(ordered_content))] + component_text[(end_index + 1):]
+            start_index, end_index = self.extract_component(content_copy, component)
+            if start_index != -1 and end_index != -1:
+                if len(self.remove_whitespace(content_copy[:start_index])) == 0:
+                    content_copy = content_copy[:start_index] + content_copy[end_index + 1:]
 
         if self.remove_whitespace(content_copy) != "":
+            self.logData += "ERROR: Cannot parse recipe file with unknown content"
             return False
 
         return True
@@ -424,7 +464,7 @@ class RecipeFixer():
 
         return "".join(text.split())
 
-    def last_non_whitespace_character(self, text, skip_character_list, max_num_chars_to_skip):
+    def find_previous_non_whitespace_character(self, text, skip_character_list, max_num_chars_to_skip):
         """
         Returns the index of the last non-whitespace character, excluding
         the skip characters.
