@@ -290,6 +290,25 @@ class RecipeFixer():
                 print("\033[91mERROR: \033[00m{}".format("Cannot find SUMMARY in recipe"))
                 self.logData += "ERROR: Cannot find SUMMARY in recipe\n"
 
+            # Correcting DESCRIPTION related issues
+            if component == "DESCRIPTION" and "DESCRIPTION" in extracted_component_list:
+                # Removing extra new line characters
+                lines = extracted_component_list[component]["text"].split("\n")
+                for line_index in range(0, len(lines)):
+                    if self.remove_whitespace(lines[line_index]) == "":
+                        lines[line_index] = ""
+                    else:
+                        lines[line_index] += "\n"
+                extracted_component_list[component]["text"] = "".join(lines)
+
+                # Cleaning ending of component (fixing tabs, etc)
+                end_character_index = self.find_previous_non_whitespace_character(extracted_component_list[component]["text"], [self.component_ordering[component]["end_id"]], 1)
+                if end_character_index != -1:
+                    extracted_component_list[component]["text"] = extracted_component_list[component]["text"][:(end_character_index + 1)] + self.component_ordering[component]["end_id"] + "\n"
+            elif component == "DESCRIPTION" and "DESCRIPTION" not in extracted_component_list:
+                print("\033[91mERROR: \033[00m{}".format("Cannot find DESCRIPTION in recipe"))
+                self.logData += "ERROR: Cannot find DESCRIPTION in recipe\n"
+
             # Correcting PROVIDES related issues
             if component == "PROVIDES" and "PROVIDES" in extracted_component_list:
                 # Removing extra new line characters
@@ -345,10 +364,16 @@ class RecipeFixer():
 
                 # Make sure there is a REQUIRES_devel component in the recipe
                 if "REQUIRES_devel" not in extracted_component_list:
-                    extracted_component_list["REQUIRES_devel"] = {
-                        "text" : "REQUIRES_devel=\"\n\t\"\n"
-                    }
-                    self.logData += "WARNING: Adding missing REQUIRES_devel component\n"
+                    if "SECONDARY_ARCHITECTURES" in extracted_component_list:
+                        extracted_component_list["REQUIRES_devel"] = {
+                            "text" : "REQUIRES_devel=\"\n\thaiku$\{secondaryArchSuffix\}_devel\n\t\"\n"
+                        }
+                        self.logData += "WARNING: Adding missing REQUIRES_devel component\n"
+                    else:
+                        extracted_component_list["REQUIRES_devel"] = {
+                            "text" : "REQUIRES_devel=\"\n\thaiku_devel\n\t\"\n"
+                        }
+                        self.logData += "WARNING: Adding missing REQUIRES_devel component\n"
 
                 # Cleaning ending of component (fixing tabs, etc)
                 end_character_index = self.find_previous_non_whitespace_character(extracted_component_list[component]["text"], [self.component_ordering[component]["end_id"]], 1)
@@ -368,10 +393,16 @@ class RecipeFixer():
 
                 # Make sure there is a PROVIDES_devel component in the recipe
                 if "PROVIDES_devel" not in extracted_component_list:
-                    extracted_component_list["PROVIDES_devel"] = {
-                        "text" : "PROVIDES_devel=\"\n\t\"\n"
-                    }
-                    self.logData += "WARNING: Adding missing PROVIDES_devel component\n"
+                    if "SECONDARY_ARCHITECTURES" in extracted_component_list:
+                        extracted_component_list["PROVIDES_devel"] = {
+                            "text" : "PROVIDES_devel=\"\n\t" + re.sub("-.*", "", self.name) + "$\{secondaryArchSuffix\}_devel = $portVersion\n\t\"\n"
+                        }
+                        self.logData += "WARNING: Adding missing PROVIDES_devel component\n"
+                    else:
+                        extracted_component_list["PROVIDES_devel"] = {
+                            "text" : "PROVIDES_devel=\"\n\t" + re.sub("-.*", "", self.name) + "_devel = $portVersion\n\t\"\n"
+                        }
+                        self.logData += "WARNING: Adding missing PROVIDES_devel component\n"
 
                 # Cleaning ending of component (fixing tabs, etc)
                 end_character_index = self.find_previous_non_whitespace_character(extracted_component_list[component]["text"], [self.component_ordering[component]["end_id"]], 1)
