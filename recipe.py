@@ -292,15 +292,6 @@ class RecipeFixer():
 
             # Correcting DESCRIPTION related issues
             if component == "DESCRIPTION" and "DESCRIPTION" in extracted_component_list:
-                # Removing extra new line characters
-                lines = extracted_component_list[component]["text"].split("\n")
-                for line_index in range(0, len(lines)):
-                    if self.remove_whitespace(lines[line_index]) == "":
-                        lines[line_index] = ""
-                    else:
-                        lines[line_index] += "\n"
-                extracted_component_list[component]["text"] = "".join(lines)
-
                 # Cleaning ending of component (fixing tabs, etc)
                 end_character_index = self.find_previous_non_whitespace_character(extracted_component_list[component]["text"], [self.component_ordering[component]["end_id"]], 1)
                 if end_character_index != -1:
