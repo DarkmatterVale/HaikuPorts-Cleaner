@@ -301,6 +301,159 @@ class RecipeFixer():
                 print("\033[91mERROR: \033[00m{}".format("Cannot find DESCRIPTION in recipe"))
                 self.logData += "ERROR: Cannot find DESCRIPTION in recipe\n"
 
+            # Correcting HOMPAGE related issues
+            if component == "HOMEPAGE" and "HOMEPAGE" in extracted_component_list:
+                # Make sure it is only one line long
+                if len(extracted_component_list[component]["text"].split("\n")) > 2:
+                    extracted_component_list[component]["text"] = re.sub(r"\n", "", extracted_component_list[component]["text"]) + "\n"
+                    self.logData += "WARNING: Removing extra newline characters in HOMEPAGE\n"
+
+            # Correcting COPYRIGHT related issues
+            if component == "COPYRIGHT" and "COPYRIGHT" in extracted_component_list:
+                # If it is multi-line, make sure it is correctly formatted
+                if len(extracted_component_list[component]["text"].split("\n")) > 2:
+                    # Getting the individual items within provides
+                    num_, instances_ = self.number_of_instances(extracted_component_list[component]["clean_text"], "*", ["\n"])
+
+                    # Generating the correct provides component
+                    generated_text = component + self.component_ordering[component]["join"] + "\"\n"
+                    for instance in instances_:
+                        instance = self.remove_characters(instance, ["\t"])
+                        cleaned_instance = ""
+                        for non_spaced in instance.split(" "):
+                            if non_spaced != "":
+                                cleaned_instance += " " + non_spaced
+                        cleaned_instance = cleaned_instance[1:]
+
+                        generated_text += "\t" + cleaned_instance + "\n"
+
+                    # Cleaning ending of component (fixing tabs, etc)
+                    end_character_index = self.find_previous_non_whitespace_character(generated_text, [], 0)
+                    if end_character_index != -1:
+                        generated_text = generated_text[:(end_character_index + 1)] + "\n\t" + self.component_ordering[component]["end_id"] + "\n"
+
+                    extracted_component_list[component]["text"] = generated_text
+
+            # Correcting LICENSE related issues
+            if component == "LICENSE" and "LICENSE" in extracted_component_list:
+                # If it is multi-line, make sure it is correctly formatted
+                if len(extracted_component_list[component]["text"].split("\n")) > 2:
+                    # Getting the individual items within provides
+                    num_, instances_ = self.number_of_instances(extracted_component_list[component]["clean_text"], "*", ["\n"])
+
+                    # Generating the correct provides component
+                    generated_text = component + self.component_ordering[component]["join"] + "\"\n"
+                    for instance in instances_:
+                        instance = self.remove_characters(instance, ["\t"])
+                        cleaned_instance = ""
+                        for non_spaced in instance.split(" "):
+                            if non_spaced != "":
+                                cleaned_instance += " " + non_spaced
+                        cleaned_instance = cleaned_instance[1:]
+
+                        generated_text += "\t" + cleaned_instance + "\n"
+
+                    # Cleaning ending of component (fixing tabs, etc)
+                    end_character_index = self.find_previous_non_whitespace_character(generated_text, [], 0)
+                    if end_character_index != -1:
+                        generated_text = generated_text[:(end_character_index + 1)] + "\n\t" + self.component_ordering[component]["end_id"] + "\n"
+
+                    extracted_component_list[component]["text"] = generated_text
+
+            # Correcting REVISION related issues
+            if component == "REVISION" and "REVISION" in extracted_component_list:
+                # Make sure it is only one line long
+                if len(extracted_component_list[component]["text"].split("\n")) > 2:
+                    extracted_component_list[component]["text"] = re.sub(r"\n", "", extracted_component_list[component]["text"]) + "\n"
+                    self.logData += "WARNING: Removing extra newline characters in REVISION\n"
+
+            # Correcting SOURCE_URI related issues
+            if component == "SOURCE_URI" and "SOURCE_URI" in extracted_component_list:
+                # Make sure it is only one line long
+                if len(extracted_component_list[component]["text"].split("\n")) > 2:
+                    extracted_component_list[component]["text"] = re.sub(r"\n", "", extracted_component_list[component]["text"]) + "\n"
+                    self.logData += "WARNING: Removing extra newline characters in SOURCE_URI\n"
+
+            # Correcting CHECKSUM_SHA256 related issues
+            if component == "CHECKSUM_SHA256" and "CHECKSUM_SHA256" in extracted_component_list:
+                # Make sure it is only one line long
+                if len(extracted_component_list[component]["text"].split("\n")) > 2:
+                    extracted_component_list[component]["text"] = re.sub(r"\n", "", extracted_component_list[component]["text"]) + "\n"
+                    self.logData += "WARNING: Removing extra newline characters in CHECKSUM_SHA256\n"
+
+            # Correcting SOURCE_DIR related issues
+            if component == "SOURCE_DIR" and "SOURCE_DIR" in extracted_component_list:
+                # Make sure it is only one line long
+                if len(extracted_component_list[component]["text"].split("\n")) > 2:
+                    extracted_component_list[component]["text"] = re.sub(r"\n", "", extracted_component_list[component]["text"]) + "\n"
+                    self.logData += "WARNING: Removing extra newline characters in SOURCE_DIR\n"
+
+            # Correcting PATCHES related issues
+            if component == "PATCHES" and "PATCHES" in extracted_component_list:
+                # If it is multi-line, make sure it is correctly formatted
+                if len(extracted_component_list[component]["text"].split("\n")) > 2:
+                    # Getting the individual items within provides
+                    num_, instances_ = self.number_of_instances(extracted_component_list[component]["clean_text"], "*", ["\n"])
+
+                    # Generating the correct provides component
+                    generated_text = component + self.component_ordering[component]["join"] + "\"\n"
+                    for instance in instances_:
+                        instance = self.remove_characters(instance, ["\t"])
+                        cleaned_instance = ""
+                        for non_spaced in instance.split(" "):
+                            if non_spaced != "":
+                                cleaned_instance += " " + non_spaced
+                        cleaned_instance = cleaned_instance[1:]
+
+                        generated_text += "\t" + cleaned_instance + "\n"
+
+                    # Cleaning ending of component (fixing tabs, etc)
+                    end_character_index = self.find_previous_non_whitespace_character(generated_text, [], 0)
+                    if end_character_index != -1:
+                        generated_text = generated_text[:(end_character_index + 1)] + "\n\t" + self.component_ordering[component]["end_id"] + "\n"
+
+                    extracted_component_list[component]["text"] = generated_text
+
+            # Correcting ADDITIONAL_FILES related issues
+            if component == "ADDITIONAL_FILES" and "ADDITIONAL_FILES" in extracted_component_list:
+                # If it is multi-line, make sure it is correctly formatted
+                if len(extracted_component_list[component]["text"].split("\n")) > 2:
+                    # Getting the individual items within provides
+                    num_, instances_ = self.number_of_instances(extracted_component_list[component]["clean_text"], "*", ["\n"])
+
+                    # Generating the correct provides component
+                    generated_text = component + self.component_ordering[component]["join"] + "\"\n"
+                    for instance in instances_:
+                        instance = self.remove_characters(instance, ["\t"])
+                        cleaned_instance = ""
+                        for non_spaced in instance.split(" "):
+                            if non_spaced != "":
+                                cleaned_instance += " " + non_spaced
+                        cleaned_instance = cleaned_instance[1:]
+
+                        generated_text += "\t" + cleaned_instance + "\n"
+
+                    # Cleaning ending of component (fixing tabs, etc)
+                    end_character_index = self.find_previous_non_whitespace_character(generated_text, [], 0)
+                    if end_character_index != -1:
+                        generated_text = generated_text[:(end_character_index + 1)] + "\n\t" + self.component_ordering[component]["end_id"] + "\n"
+
+                    extracted_component_list[component]["text"] = generated_text
+
+            # Correcting ARCHITECTURES related issues
+            if component == "ARCHITECTURES" and "ARCHITECTURES" in extracted_component_list:
+                # Make sure it is only one line long
+                if len(extracted_component_list[component]["text"].split("\n")) > 2:
+                    extracted_component_list[component]["text"] = re.sub(r"\n", "", extracted_component_list[component]["text"]) + "\n"
+                    self.logData += "WARNING: Removing extra newline characters in ARCHITECTURES\n"
+
+            # Correcting SECONDARY_ARCHITECTURES related issues
+            if component == "SECONDARY_ARCHITECTURES" and "SECONDARY_ARCHITECTURES" in extracted_component_list:
+                # Make sure it is only one line long
+                if len(extracted_component_list[component]["text"].split("\n")) > 2:
+                    extracted_component_list[component]["text"] = re.sub(r"\n", "", extracted_component_list[component]["text"]) + "\n"
+                    self.logData += "WARNING: Removing extra newline characters in SECONDARY_ARCHITECTURES\n"
+
             # Correcting PROVIDES related issues
             if component == "PROVIDES" and "PROVIDES" in extracted_component_list:
                 # Getting the individual items within provides
