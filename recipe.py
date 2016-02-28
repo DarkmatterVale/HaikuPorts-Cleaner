@@ -317,7 +317,11 @@ class RecipeFixer():
                     cleaned_instance = cleaned_instance[1:]
 
                     generated_text += "\t" + cleaned_instance + "\n"
-                generated_text = generated_text[:-1] + "\"\n"
+
+                # Cleaning ending of component (fixing tabs, etc)
+                end_character_index = self.find_previous_non_whitespace_character(generated_text, [], 0)
+                if end_character_index != -1:
+                    generated_text = generated_text[:(end_character_index + 1)] + "\n\t" + self.component_ordering[component]["end_id"] + "\n"
 
                 extracted_component_list[component]["text"] = generated_text
             elif component == "PROVIDES" and "PROVIDES" not in extracted_component_list:
@@ -328,19 +332,27 @@ class RecipeFixer():
 
             # Correcting REQUIRES related issues
             if component == "REQUIRES" and "REQUIRES" in extracted_component_list:
-                # Removing extra new line characters
-                lines = extracted_component_list[component]["text"].split("\n")
-                for line_index in range(0, len(lines)):
-                    if self.remove_whitespace(lines[line_index]) == "":
-                        lines[line_index] = ""
-                    else:
-                        lines[line_index] += "\n"
-                extracted_component_list[component]["text"] = "".join(lines)
+                # Getting the individual items within provides
+                num_, instances_ = self.number_of_instances(extracted_component_list[component]["clean_text"], "*", ["\n"])
+
+                # Generating the correct provides component
+                generated_text = component + self.component_ordering[component]["join"] + "\"\n"
+                for instance in instances_:
+                    instance = self.remove_characters(instance, ["\t"])
+                    cleaned_instance = ""
+                    for non_spaced in instance.split(" "):
+                        if non_spaced != "":
+                            cleaned_instance += " " + non_spaced
+                    cleaned_instance = cleaned_instance[1:]
+
+                    generated_text += "\t" + cleaned_instance + "\n"
 
                 # Cleaning ending of component (fixing tabs, etc)
-                end_character_index = self.find_previous_non_whitespace_character(extracted_component_list[component]["text"], [self.component_ordering[component]["end_id"]], 1)
+                end_character_index = self.find_previous_non_whitespace_character(generated_text, [], 0)
                 if end_character_index != -1:
-                    extracted_component_list[component]["text"] = extracted_component_list[component]["text"][:(end_character_index + 1)] + "\n\t" + self.component_ordering[component]["end_id"] + "\n"
+                    generated_text = generated_text[:(end_character_index + 1)] + "\n\t" + self.component_ordering[component]["end_id"] + "\n"
+
+                extracted_component_list[component]["text"] = generated_text
             elif component == "REQUIRES" and "REQUIRES" not in extracted_component_list:
                 extracted_component_list["REQUIRES"] = {
                     "text" : "REQUIRES=\"\n\thaiku\n\t\"\n"
@@ -349,14 +361,27 @@ class RecipeFixer():
 
             # Correcting PROVIDES_devel related issues
             if component == "PROVIDES_devel" and "PROVIDES_devel" in extracted_component_list:
-                # Removing extra new line characters
-                lines = extracted_component_list[component]["text"].split("\n")
-                for line_index in range(0, len(lines)):
-                    if self.remove_whitespace(lines[line_index]) == "":
-                        lines[line_index] = ""
-                    else:
-                        lines[line_index] += "\n"
-                extracted_component_list[component]["text"] = "".join(lines)
+                # Getting the individual items within provides
+                num_, instances_ = self.number_of_instances(extracted_component_list[component]["clean_text"], "*", ["\n"])
+
+                # Generating the correct provides component
+                generated_text = component + self.component_ordering[component]["join"] + "\"\n"
+                for instance in instances_:
+                    instance = self.remove_characters(instance, ["\t"])
+                    cleaned_instance = ""
+                    for non_spaced in instance.split(" "):
+                        if non_spaced != "":
+                            cleaned_instance += " " + non_spaced
+                    cleaned_instance = cleaned_instance[1:]
+
+                    generated_text += "\t" + cleaned_instance + "\n"
+
+                # Cleaning ending of component (fixing tabs, etc)
+                end_character_index = self.find_previous_non_whitespace_character(generated_text, [], 0)
+                if end_character_index != -1:
+                    generated_text = generated_text[:(end_character_index + 1)] + "\n\t" + self.component_ordering[component]["end_id"] + "\n"
+
+                extracted_component_list[component]["text"] = generated_text
 
                 # Make sure there is a REQUIRES_devel component in the recipe
                 if "REQUIRES_devel" not in extracted_component_list:
@@ -371,21 +396,29 @@ class RecipeFixer():
                         }
                         self.logData += "WARNING: Adding missing REQUIRES_devel component\n"
 
-                # Cleaning ending of component (fixing tabs, etc)
-                end_character_index = self.find_previous_non_whitespace_character(extracted_component_list[component]["text"], [self.component_ordering[component]["end_id"]], 1)
-                if end_character_index != -1:
-                    extracted_component_list[component]["text"] = extracted_component_list[component]["text"][:(end_character_index + 1)] + "\n\t" + self.component_ordering[component]["end_id"] + "\n"
-
             # Correcting REQUIRES_devel related issues
             if component == "REQUIRES_devel" and "REQUIRES_devel" in extracted_component_list:
-                # Removing extra new line characters
-                lines = extracted_component_list[component]["text"].split("\n")
-                for line_index in range(0, len(lines)):
-                    if self.remove_whitespace(lines[line_index]) == "":
-                        lines[line_index] = ""
-                    else:
-                        lines[line_index] += "\n"
-                extracted_component_list[component]["text"] = "".join(lines)
+                # Getting the individual items within provides
+                num_, instances_ = self.number_of_instances(extracted_component_list[component]["clean_text"], "*", ["\n"])
+
+                # Generating the correct provides component
+                generated_text = component + self.component_ordering[component]["join"] + "\"\n"
+                for instance in instances_:
+                    instance = self.remove_characters(instance, ["\t"])
+                    cleaned_instance = ""
+                    for non_spaced in instance.split(" "):
+                        if non_spaced != "":
+                            cleaned_instance += " " + non_spaced
+                    cleaned_instance = cleaned_instance[1:]
+
+                    generated_text += "\t" + cleaned_instance + "\n"
+
+                # Cleaning ending of component (fixing tabs, etc)
+                end_character_index = self.find_previous_non_whitespace_character(generated_text, [], 0)
+                if end_character_index != -1:
+                    generated_text = generated_text[:(end_character_index + 1)] + "\n\t" + self.component_ordering[component]["end_id"] + "\n"
+
+                extracted_component_list[component]["text"] = generated_text
 
                 # Make sure there is a PROVIDES_devel component in the recipe
                 if "PROVIDES_devel" not in extracted_component_list:
@@ -400,10 +433,53 @@ class RecipeFixer():
                         }
                         self.logData += "WARNING: Adding missing PROVIDES_devel component\n"
 
+            # Correcting REQUIRES_devel related issues
+            if component == "BUILD_REQUIRES" and "BUILD_REQUIRES" in extracted_component_list:
+                # Getting the individual items within provides
+                num_, instances_ = self.number_of_instances(extracted_component_list[component]["clean_text"], "*", ["\n"])
+
+                # Generating the correct provides component
+                generated_text = component + self.component_ordering[component]["join"] + "\"\n"
+                for instance in instances_:
+                    instance = self.remove_characters(instance, ["\t"])
+                    cleaned_instance = ""
+                    for non_spaced in instance.split(" "):
+                        if non_spaced != "":
+                            cleaned_instance += " " + non_spaced
+                    cleaned_instance = cleaned_instance[1:]
+
+                    generated_text += "\t" + cleaned_instance + "\n"
+
                 # Cleaning ending of component (fixing tabs, etc)
-                end_character_index = self.find_previous_non_whitespace_character(extracted_component_list[component]["text"], [self.component_ordering[component]["end_id"]], 1)
+                end_character_index = self.find_previous_non_whitespace_character(generated_text, [], 0)
                 if end_character_index != -1:
-                    extracted_component_list[component]["text"] = extracted_component_list[component]["text"][:(end_character_index + 1)] + "\n\t" + self.component_ordering[component]["end_id"] + "\n"
+                    generated_text = generated_text[:(end_character_index + 1)] + "\n\t" + self.component_ordering[component]["end_id"] + "\n"
+
+                extracted_component_list[component]["text"] = generated_text
+
+            # Correcting REQUIRES_devel related issues
+            if component == "BUILD_PREREQUIRES" and "BUILD_PREREQUIRES" in extracted_component_list:
+                # Getting the individual items within provides
+                num_, instances_ = self.number_of_instances(extracted_component_list[component]["clean_text"], "*", ["\n"])
+
+                # Generating the correct provides component
+                generated_text = component + self.component_ordering[component]["join"] + "\"\n"
+                for instance in instances_:
+                    instance = self.remove_characters(instance, ["\t"])
+                    cleaned_instance = ""
+                    for non_spaced in instance.split(" "):
+                        if non_spaced != "":
+                            cleaned_instance += " " + non_spaced
+                    cleaned_instance = cleaned_instance[1:]
+
+                    generated_text += "\t" + cleaned_instance + "\n"
+
+                # Cleaning ending of component (fixing tabs, etc)
+                end_character_index = self.find_previous_non_whitespace_character(generated_text, [], 0)
+                if end_character_index != -1:
+                    generated_text = generated_text[:(end_character_index + 1)] + "\n\t" + self.component_ordering[component]["end_id"] + "\n"
+
+                extracted_component_list[component]["text"] = generated_text
 
         # Assembling final information
         for component in self.order:
