@@ -265,7 +265,8 @@ class RecipeFixer():
                     extraction_text = extraction_text[:start_text] + extraction_text[end_test + 1:]
 
                     extracted_component_list[component] = {
-                        "text" : str(self.content)[start_:end_] + "\n"
+                        "text" : str(self.content)[start_:end_] + "\n",
+                        "clean_text" : re.sub(component + self.component_ordering[component]["join"], "", str(self.content)[start_:end_] + "\n")[1:-2]
                     }
 
         # Correcting mistakes in each component
@@ -302,19 +303,23 @@ class RecipeFixer():
 
             # Correcting PROVIDES related issues
             if component == "PROVIDES" and "PROVIDES" in extracted_component_list:
-                # Removing extra new line characters
-                lines = extracted_component_list[component]["text"].split("\n")
-                for line_index in range(0, len(lines)):
-                    if self.remove_whitespace(lines[line_index]) == "":
-                        lines[line_index] = ""
-                    else:
-                        lines[line_index] += "\n"
-                extracted_component_list[component]["text"] = "".join(lines)
+                # Getting the individual items within provides
+                num_, instances_ = self.number_of_instances(extracted_component_list[component]["clean_text"], "*", ["\n"])
 
-                # Cleaning ending of component (fixing tabs, etc)
-                end_character_index = self.find_previous_non_whitespace_character(extracted_component_list[component]["text"], [self.component_ordering[component]["end_id"]], 1)
-                if end_character_index != -1:
-                    extracted_component_list[component]["text"] = extracted_component_list[component]["text"][:(end_character_index + 1)] + "\n\t" + self.component_ordering[component]["end_id"] + "\n"
+                # Generating the correct provides component
+                generated_text = component + self.component_ordering[component]["join"] + "\"\n"
+                for instance in instances_:
+                    instance = self.remove_characters(instance, ["\t"])
+                    cleaned_instance = ""
+                    for non_spaced in instance.split(" "):
+                        if non_spaced != "":
+                            cleaned_instance += " " + non_spaced
+                    cleaned_instance = cleaned_instance[1:]
+
+                    generated_text += "\t" + cleaned_instance + "\n"
+                generated_text = generated_text[:-1] + "\"\n"
+
+                extracted_component_list[component]["text"] = generated_text
             elif component == "PROVIDES" and "PROVIDES" not in extracted_component_list:
                 extracted_component_list["PROVIDES"] = {
                     "text" : "PROVIDES=\"\n\t" + re.sub("-.*", "", self.name) + " = $portVersion\n\t\"\n"
@@ -573,3 +578,37 @@ class RecipeFixer():
             break
 
         return character_index
+
+    def number_of_instances(self, text, char_to_find, skip_chars):
+        """
+        Returns the number of times "char_to_find" is found in "text", split
+        by "skip_chars"
+        """
+        number = 0
+        instances = []
+
+        for skip_char in skip_chars:
+            text_components = text.split()
+            if skip_char != "":
+                text_components = text.split(skip_char)
+
+            for individual_component in text_components:
+                if char_to_find == "*":
+                    if individual_component != "":
+                        number += 1
+                        instances.append(individual_component)
+                else:
+                    if individual_component == char_to_find:
+                        number += 1
+                        instances.append(individual_component)
+
+        return number, instances
+
+    def remove_characters(self, text, chars_to_remove):
+        """
+        Returns the text minus all of the instances of "chars_to_remove"
+        """
+        for char in chars_to_remove:
+            text = re.sub(char, "", text)
+
+        return text
