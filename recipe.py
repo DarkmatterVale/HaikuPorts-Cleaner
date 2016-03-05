@@ -34,6 +34,11 @@ class RecipeFixer():
             "INSTALL()",
             "TEST()",
         ]
+
+        self.remove_components = [
+            "STATUS_HAIKU"
+        ]
+
         self.component_ordering = {
             "SUMMARY" : {
                 "begin_id" : '"',
@@ -303,15 +308,102 @@ class RecipeFixer():
 
             # Correcting HOMPAGE related issues
             if component == "HOMEPAGE" and "HOMEPAGE" in extracted_component_list:
-                pass
+                # If it is multi-line, make sure it is correctly formatted
+                if len(extracted_component_list[component]["text"].split("\n")) > 2:
+                    # Getting the individual items within provides
+                    num_, instances_ = self.number_of_instances(extracted_component_list[component]["clean_text"], "*", ["\n"])
+
+                    # Generating the correct provides component
+                    generated_text = component + self.component_ordering[component]["join"] + "\"" + re.sub("\t", "", instances_[0]) + "\n"
+
+                    # Since the first COPYRIGHT is not supposed to be on a newline, ignore it
+                    num_ -= 1
+                    instances_ = instances_[1:]
+
+                    for instance in instances_:
+                        cleaned_instance = ""
+                        for non_spaced in self.remove_characters(instance, ["\t"]).split(" "):
+                            if non_spaced != "":
+                                cleaned_instance += " " + non_spaced
+                        cleaned_instance = cleaned_instance[1:]
+
+                        if "#" in instance:
+                            generated_text += instance + "\n"
+                        else:
+                            generated_text += "\t" + cleaned_instance + "\n"
+
+                    # Cleaning ending of component (fixing tabs, etc)
+                    end_character_index = self.find_previous_non_whitespace_character(generated_text, [], 0)
+                    if end_character_index != -1:
+                        generated_text = generated_text[:(end_character_index + 1)] + self.component_ordering[component]["end_id"] + "\n"
+
+                    extracted_component_list[component]["text"] = generated_text
 
             # Correcting COPYRIGHT related issues
             if component == "COPYRIGHT" and "COPYRIGHT" in extracted_component_list:
-                pass
+                # If it is multi-line, make sure it is correctly formatted
+                if len(extracted_component_list[component]["text"].split("\n")) > 2:
+                    # Getting the individual items within provides
+                    num_, instances_ = self.number_of_instances(extracted_component_list[component]["clean_text"], "*", ["\n"])
+
+                    # Generating the correct provides component
+                    generated_text = component + self.component_ordering[component]["join"] + "\"" + re.sub("\t", "", instances_[0]) + "\n"
+
+                    # Since the first COPYRIGHT is not supposed to be on a newline, ignore it
+                    num_ -= 1
+                    instances_ = instances_[1:]
+
+                    for instance in instances_:
+                        cleaned_instance = ""
+                        for non_spaced in self.remove_characters(instance, ["\t"]).split(" "):
+                            if non_spaced != "":
+                                cleaned_instance += " " + non_spaced
+                        cleaned_instance = cleaned_instance[1:]
+
+                        if "#" in instance:
+                            generated_text += instance + "\n"
+                        else:
+                            generated_text += "\t" + cleaned_instance + "\n"
+
+                    # Cleaning ending of component (fixing tabs, etc)
+                    end_character_index = self.find_previous_non_whitespace_character(generated_text, [], 0)
+                    if end_character_index != -1:
+                        generated_text = generated_text[:(end_character_index + 1)] + self.component_ordering[component]["end_id"] + "\n"
+
+                    extracted_component_list[component]["text"] = generated_text
 
             # Correcting LICENSE related issues
             if component == "LICENSE" and "LICENSE" in extracted_component_list:
-                pass
+                # If it is multi-line, make sure it is correctly formatted
+                if len(extracted_component_list[component]["text"].split("\n")) > 2:
+                    # Getting the individual items within provides
+                    num_, instances_ = self.number_of_instances(extracted_component_list[component]["clean_text"], "*", ["\n"])
+
+                    # Generating the correct provides component
+                    generated_text = component + self.component_ordering[component]["join"] + "\"" + re.sub("\t", "", instances_[0]) + "\n"
+
+                    # Since the first COPYRIGHT is not supposed to be on a newline, ignore it
+                    num_ -= 1
+                    instances_ = instances_[1:]
+
+                    for instance in instances_:
+                        cleaned_instance = ""
+                        for non_spaced in self.remove_characters(instance, ["\t"]).split(" "):
+                            if non_spaced != "":
+                                cleaned_instance += " " + non_spaced
+                        cleaned_instance = cleaned_instance[1:]
+
+                        if "#" in instance:
+                            generated_text += instance + "\n"
+                        else:
+                            generated_text += "\t" + cleaned_instance + "\n"
+
+                    # Cleaning ending of component (fixing tabs, etc)
+                    end_character_index = self.find_previous_non_whitespace_character(generated_text, [], 0)
+                    if end_character_index != -1:
+                        generated_text = generated_text[:(end_character_index + 1)] + self.component_ordering[component]["end_id"] + "\n"
+
+                    extracted_component_list[component]["text"] = generated_text
 
             # Correcting REVISION related issues
             if component == "REVISION" and "REVISION" in extracted_component_list:
@@ -617,7 +709,6 @@ class RecipeFixer():
         # Return the final components
         return ordered_content
 
-
     def extract_component(self, text, component_name):
         """
         Returns the start and end index for the component with the name
@@ -687,7 +778,6 @@ class RecipeFixer():
         """
         Removes all whitespace in the text and returns whatever is remaining.
         """
-
         return "".join(text.split())
 
     def find_previous_non_whitespace_character(self, text, skip_character_list, max_num_chars_to_skip):
@@ -811,3 +901,8 @@ class RecipeFixer():
             text = re.sub(char, "", text)
 
         return text
+
+    def convert_old_format(self, text):
+        """
+        Convert recipes of the old format
+        """
