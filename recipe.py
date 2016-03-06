@@ -313,7 +313,7 @@ class RecipeFixer():
                     # Getting the individual items within provides
                     num_, instances_ = self.number_of_instances(extracted_component_list[component]["clean_text"], "*", ["\n"])
 
-                    # Generating the correct provides component
+                    # Generating the correct homepage component
                     generated_text = component + self.component_ordering[component]["join"] + "\"" + re.sub("\t", "", instances_[0]) + "\n"
 
                     # Since the first COPYRIGHT is not supposed to be on a newline, ignore it
@@ -346,24 +346,37 @@ class RecipeFixer():
                     # Getting the individual items within provides
                     num_, instances_ = self.number_of_instances(extracted_component_list[component]["clean_text"], "*", ["\n"])
 
-                    # Generating the correct provides component
-                    generated_text = component + self.component_ordering[component]["join"] + "\"" + re.sub("\t", "", instances_[0]) + "\n"
+                    # Cleaning all extra commas
+                    for instance_index in range(0, num_):
+                        for character_index in range(1, len(instances_[instance_index]) - 3):
+                            try:
+                                if instances_[instance_index][character_index] == ",":
+                                    if re.sub("[0-9]", "", instances_[instance_index][character_index - 1]) == "" and instances_[instance_index][character_index + 1] == " " and re.sub("[0-9]", "", instances_[instance_index][character_index + 2]) != "":
+                                        instances_[instance_index] = instances_[instance_index][:character_index] + instances_[instance_index][character_index + 1:]
+                            except:
+                                pass
 
-                    # Since the first COPYRIGHT is not supposed to be on a newline, ignore it
-                    num_ -= 1
-                    instances_ = instances_[1:]
+                    # Generating the correct copyright component
+                    if instances_[0][0] == "\t":
+                        generated_text = component + self.component_ordering[component]["join"] + "\"" + instances_[0][1:] + "\n"
+                    else:
+                        generated_text = component + self.component_ordering[component]["join"] + "\"" + instances_[0] + "\n"
 
-                    for instance in instances_:
+                    for instance_index in range(1, len(instances_)):
                         cleaned_instance = ""
-                        for non_spaced in self.remove_characters(instance, ["\t"]).split(" "):
+                        for non_spaced in self.remove_characters(instances_[instance_index], ["\t"]).split(" "):
                             if non_spaced != "":
                                 cleaned_instance += " " + non_spaced
                         cleaned_instance = cleaned_instance[1:]
 
-                        if "#" in instance:
-                            generated_text += instance + "\n"
-                        else:
-                            generated_text += "\t" + cleaned_instance + "\n"
+                        if "#" in instances_[instance_index]:
+                            generated_text += instances_[instance_index] + "\n"
+                        elif instance_index > 0:
+                                if "\\" in instances_[instance_index - 1]:
+                                    generated_text += cleaned_instance + "\n"
+                                    continue
+
+                        generated_text += "\t" + cleaned_instance + "\n"
 
                     # Cleaning ending of component (fixing tabs, etc)
                     end_character_index = self.find_previous_non_whitespace_character(generated_text, [], 0)
@@ -379,7 +392,7 @@ class RecipeFixer():
                     # Getting the individual items within provides
                     num_, instances_ = self.number_of_instances(extracted_component_list[component]["clean_text"], "*", ["\n"])
 
-                    # Generating the correct provides component
+                    # Generating the correct license component
                     generated_text = component + self.component_ordering[component]["join"] + "\"" + re.sub("\t", "", instances_[0]) + "\n"
 
                     # Since the first COPYRIGHT is not supposed to be on a newline, ignore it
@@ -440,7 +453,7 @@ class RecipeFixer():
                     # Getting the individual items within provides
                     num_, instances_ = self.number_of_instances(extracted_component_list[component]["clean_text"], "*", ["\n"])
 
-                    # Generating the correct provides component
+                    # Generating the correct patches component
                     generated_text = component + self.component_ordering[component]["join"] + "\"\n"
                     for instance in instances_:
                         cleaned_instance = ""
@@ -468,7 +481,7 @@ class RecipeFixer():
                     # Getting the individual items within provides
                     num_, instances_ = self.number_of_instances(extracted_component_list[component]["clean_text"], "*", ["\n"])
 
-                    # Generating the correct provides component
+                    # Generating the correct additional_files component
                     generated_text = component + self.component_ordering[component]["join"] + "\"\n"
                     for instance in instances_:
                         cleaned_instance = ""
@@ -539,7 +552,7 @@ class RecipeFixer():
                 # Getting the individual items within provides
                 num_, instances_ = self.number_of_instances(extracted_component_list[component]["clean_text"], "*", ["\n"])
 
-                # Generating the correct provides component
+                # Generating the correct requires component
                 generated_text = component + self.component_ordering[component]["join"] + "\"\n"
                 for instance in instances_:
                     cleaned_instance = ""
@@ -570,7 +583,7 @@ class RecipeFixer():
                 # Getting the individual items within provides
                 num_, instances_ = self.number_of_instances(extracted_component_list[component]["clean_text"], "*", ["\n"])
 
-                # Generating the correct provides component
+                # Generating the correct provides_devel component
                 generated_text = component + self.component_ordering[component]["join"] + "\"\n"
                 for instance in instances_:
                     cleaned_instance = ""
@@ -609,7 +622,7 @@ class RecipeFixer():
                 # Getting the individual items within provides
                 num_, instances_ = self.number_of_instances(extracted_component_list[component]["clean_text"], "*", ["\n"])
 
-                # Generating the correct provides component
+                # Generating the correct requires_devel component
                 generated_text = component + self.component_ordering[component]["join"] + "\"\n"
                 for instance in instances_:
                     cleaned_instance = ""
@@ -648,7 +661,7 @@ class RecipeFixer():
                 # Getting the individual items within provides
                 num_, instances_ = self.number_of_instances(extracted_component_list[component]["clean_text"], "*", ["\n"])
 
-                # Generating the correct provides component
+                # Generating the correct build_requires component
                 generated_text = component + self.component_ordering[component]["join"] + "\"\n"
                 for instance in instances_:
                     cleaned_instance = ""
@@ -675,7 +688,7 @@ class RecipeFixer():
                 # Getting the individual items within provides
                 num_, instances_ = self.number_of_instances(extracted_component_list[component]["clean_text"], "*", ["\n"])
 
-                # Generating the correct provides component
+                # Generating the correct build_prerequires component
                 generated_text = component + self.component_ordering[component]["join"] + "\"\n"
                 for instance in instances_:
                     cleaned_instance = ""
@@ -904,5 +917,5 @@ class RecipeFixer():
 
     def convert_old_format(self, text):
         """
-        Convert recipes of the old format
+        Convert recipes from the old format to the new format.
         """
