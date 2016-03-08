@@ -36,7 +36,9 @@ class RecipeFixer():
         ]
 
         self.remove_components = [
-            "STATUS_HAIKU"
+            "STATUS_HAIKU",
+            "CHECKSUM_MD5",
+            "DEPEND"
         ]
 
         self.component_ordering = {
@@ -200,6 +202,27 @@ class RecipeFixer():
                 "name" : "TEST()",
                 "join" : "\n",
                 "pre_requests" : ["\n"]
+            },
+            "STATUS_HAIKU" : {
+                "begin_id" : '"',
+                "end_id" : '"',
+                "name" : "STATUS_HAIKU",
+                "join" : "=",
+                "pre_requests" : []
+            },
+            "DEPEND" : {
+                "begin_id" : '"',
+                "end_id" : '"',
+                "name" : "DEPEND",
+                "join" : "=",
+                "pre_requests" : []
+            },
+            "CHECKSUM_MD5" : {
+                "begin_id" : '"',
+                "end_id" : '"',
+                "name" : "CHECKSUM_MD5",
+                "join" : "=",
+                "pre_requests" : []
             }
         }
 
@@ -224,18 +247,24 @@ class RecipeFixer():
             self.content = content_file.read()
             content_file.close()
 
-        # Determine whether to cancel the cleaning or not
-        if not self.should_clean_recipe(self.content):
+        # Determine whether the recipe is of the old format
+        if self.should_update_format(self.content):
+            # Apply updating
+            self.corrected_content = self.convert_old_format(self.content)
+            print(str(self.corrected_content))
+            exit(0)
+            self.content = self.corrected_content
+            self.corrected_content = self.correct_ordering()
+        # Determine whether clean the recipe
+        elif self.should_clean_recipe(self.content):
+            # Apply cleaning
+            self.corrected_content = self.correct_ordering()
+        else:
             return
 
-        # Apply cleaning. This entails fixing:
-        # - Ordering
-
-        # Fix ordering
-        self.corrected_content = self.correct_ordering()
-
+        """
         # Save new data to the recipe file
-        with open(os.path.join(self.baseDir, self.name), 'w') as content_file:
+        with open(os.path.join("/Users/vtolpegin/Desktop", self.name), 'w') as content_file:
             content_file.seek(0)
             content_file.write(self.corrected_content)
             content_file.close()
@@ -244,6 +273,7 @@ class RecipeFixer():
         with open(os.path.join(os.getcwd(), self.logFile), 'a') as log_file:
             log_file.write(self.logData)
             log_file.close()
+        """
 
     def correct_ordering(self):
         """
@@ -787,6 +817,17 @@ class RecipeFixer():
 
         return True
 
+    def should_update_format(self, content):
+        """
+        If the parser detects that the recipe is of the old format, update the
+        recipe.
+        """
+        for old_component in self.remove_components:
+            if old_component in content:
+                return True
+
+        return False
+
     def remove_whitespace(self, text):
         """
         Removes all whitespace in the text and returns whatever is remaining.
@@ -919,3 +960,78 @@ class RecipeFixer():
         """
         Convert recipes from the old format to the new format.
         """
+        warning_text = "# WARNING: THIS RECIPE WAS AUTO-CONVERTED...SEE GIT LOG FOR MORE INFORMATION\n\n"
+        extracted_component_list = {}
+
+        # Adding log data
+        self.logData += ("*" * 70) + "\n"
+        self.logData += re.sub(".recipe", "", self.name) + "\n"
+        self.logData += ("*" * 70) + "\n"
+
+        # For each component, go through the recipe, find it, and correctly
+        #   place it into the new recipe
+        for component in self.order:
+            start_, end_ = self.extract_component(text, component)
+
+            if start_ != -1 and end_ != -1:
+                extracted_component_list[component] = {
+                    "text" : str(self.content)[start_:end_] + "\n",
+                    "clean_text" : re.sub(component + self.component_ordering[component]["join"], "", str(self.content)[start_:end_] + "\n")[1:-2]
+                }
+
+        for component in self.remove_components:
+            start_, end_ = self.extract_component(text, component)
+
+            if start_ != -1 and end_ != -1:
+                extracted_component_list[component] = {
+                    "text" : str(self.content)[start_:end_] + "\n",
+                    "clean_text" : re.sub(component + self.component_ordering[component]["join"], "", str(self.content)[start_:end_] + "\n")[1:-2]
+                }
+
+        # Cleaning all old components & generating appropriate current
+        #   components
+        for component in self.remove_components:
+            # Converting DEPEND into other parts of the recipe
+            if component == "DEPEND" and component in extracted_component_list:
+                depend_components = self.extract_depend_components(extracted_component_list[component]["clean_text"])
+
+                print(depend_components)
+
+        # Assembling final information
+        for component in self.order:
+            if component in extracted_component_list:
+                for component_part in self.component_ordering[component]["pre_requests"]:
+                    ordered_content += component_part
+                ordered_content += extracted_component_list[component]["text"]
+
+        return warning_text + text
+
+    def extract_depend_components(self, clean_depend_component):
+        """
+        Extracts each dependency. It then determines the version(s) required
+        and returns a list containing the [ordered] data for each dependency.
+        """
+        depend_components = []
+
+        for component in clean_depend_component.split("\n"):
+            if self.remove_whitespace(component) != "":
+                indiv_dependency_components = component.split(" ")
+
+                name = ""
+                ver_operator = ""
+                version = ""
+
+                for indiv_comp_index in range(0, len(indiv_dependency_components)):
+                    if self.remove_whitespace(indiv_dependency_components[indiv_comp_index]) != "":
+                        try:
+                            name = re.sub(".*/", "", indiv_dependency_components[indiv_comp_index])
+                            ver_operator = indiv_dependency_components[indiv_comp_index + 1]
+                            version = indiv_dependency_components[indiv_comp_index + 2]
+                            break
+                        except:
+                            pass
+
+                depend_components.append([name, ver_operator, version])
+
+        # Returning the dependencies found in the DEPEND component
+        return depend_components
