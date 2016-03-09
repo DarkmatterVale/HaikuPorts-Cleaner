@@ -242,6 +242,11 @@ class RecipeFixer():
         self.corrected_content = ""
         self.logData = ""
 
+        # Adding log data
+        self.logData += ("*" * 70) + "\n"
+        self.logData += re.sub(".recipe", "", self.name) + "\n"
+        self.logData += ("*" * 70) + "\n"
+
         # Read the recipe file
         with open(os.path.join(self.baseDir, self.name), 'r') as content_file:
             self.content = content_file.read()
@@ -251,14 +256,20 @@ class RecipeFixer():
         if self.should_update_format(self.content):
             # Apply updating
             self.corrected_content = self.convert_old_format(self.content)
-            print(str(self.corrected_content))
-            exit(0)
+
+            #print(str(self.corrected_content))
+            #print("\n---\n")
+
             self.content = self.corrected_content
             self.corrected_content = self.correct_ordering()
+
+            print(str(self.corrected_content))
+            exit(0)
         # Determine whether clean the recipe
         elif self.should_clean_recipe(self.content):
             # Apply cleaning
-            self.corrected_content = self.correct_ordering()
+            #self.corrected_content = self.correct_ordering()
+            pass
         else:
             return
 
@@ -283,26 +294,16 @@ class RecipeFixer():
         ordered_content = ""
         extracted_component_list = {}
 
-        # Adding log data
-        self.logData += ("*" * 70) + "\n"
-        self.logData += re.sub(".recipe", "", self.name) + "\n"
-        self.logData += ("*" * 70) + "\n"
-
         # For each component, go through the recipe, find it, and correctly
         #   place it into the new recipe
-        extraction_text = str(original_content)
         for component in self.order:
-            start_, end_ = self.extract_component(str(self.content), component)
-            start_text, end_test = self.extract_component(extraction_text, component)
+            start_, end_ = self.extract_component(original_content, component)
 
-            if start_text != -1 and end_test != -1:
-                if len(self.remove_whitespace(extraction_text[:start_text])) == 0:
-                    extraction_text = extraction_text[:start_text] + extraction_text[end_test + 1:]
-
-                    extracted_component_list[component] = {
-                        "text" : str(self.content)[start_:end_] + "\n",
-                        "clean_text" : re.sub(component + self.component_ordering[component]["join"], "", str(self.content)[start_:end_] + "\n")[1:-2]
-                    }
+            if start_ != -1 and end_ != -1:
+                extracted_component_list[component] = {
+                    "text" : str(self.content)[start_:end_] + "\n",
+                    "clean_text" : re.sub(component + self.component_ordering[component]["join"], "", str(self.content)[start_:end_] + "\n")[1:-2]
+                }
 
         # Correcting mistakes in each component
         for component in self.order:
@@ -325,6 +326,12 @@ class RecipeFixer():
             elif component == "SUMMARY" and "SUMMARY" not in extracted_component_list:
                 print("\033[91mERROR: \033[00m{}".format("Cannot find SUMMARY in recipe"))
                 self.logData += "ERROR: Cannot find SUMMARY in recipe\n"
+                self.logData += "WARNING: Adding dummy SUMMARY component in recipe\n"
+
+                extracted_component_list[component] = {
+                    "text" : component + self.component_ordering[component]["join"] + "\"\"\n",
+                    "clean_text" : ""
+                }
 
             # Correcting DESCRIPTION related issues
             if component == "DESCRIPTION" and "DESCRIPTION" in extracted_component_list:
@@ -335,6 +342,12 @@ class RecipeFixer():
             elif component == "DESCRIPTION" and "DESCRIPTION" not in extracted_component_list:
                 print("\033[91mERROR: \033[00m{}".format("Cannot find DESCRIPTION in recipe"))
                 self.logData += "ERROR: Cannot find DESCRIPTION in recipe\n"
+                self.logData += "WARNING: Adding dummy DESCRIPTION component in recipe\n"
+
+                extracted_component_list[component] = {
+                    "text" : component + self.component_ordering[component]["join"] + "\"\"\n",
+                    "clean_text" : ""
+                }
 
             # Correcting HOMPAGE related issues
             if component == "HOMEPAGE" and "HOMEPAGE" in extracted_component_list:
@@ -368,6 +381,13 @@ class RecipeFixer():
                         generated_text = generated_text[:(end_character_index + 1)] + self.component_ordering[component]["end_id"] + "\n"
 
                     extracted_component_list[component]["text"] = generated_text
+            elif component == "HOMEPAGE" and component not in extracted_component_list:
+                self.logData += "WARNING: Adding dummy " + component + " component in recipe\n"
+
+                extracted_component_list[component] = {
+                    "text" : component + self.component_ordering[component]["join"] + "\"\"\n",
+                    "clean_text" : ""
+                }
 
             # Correcting COPYRIGHT related issues
             if component == "COPYRIGHT" and "COPYRIGHT" in extracted_component_list:
@@ -414,6 +434,13 @@ class RecipeFixer():
                         generated_text = generated_text[:(end_character_index + 1)] + self.component_ordering[component]["end_id"] + "\n"
 
                     extracted_component_list[component]["text"] = generated_text
+            elif component == "COPYRIGHT" and component not in extracted_component_list:
+                self.logData += "WARNING: Adding dummy " + component + " component in recipe\n"
+
+                extracted_component_list[component] = {
+                    "text" : component + self.component_ordering[component]["join"] + "\"\"\n",
+                    "clean_text" : ""
+                }
 
             # Correcting LICENSE related issues
             if component == "LICENSE" and "LICENSE" in extracted_component_list:
@@ -447,6 +474,13 @@ class RecipeFixer():
                         generated_text = generated_text[:(end_character_index + 1)] + self.component_ordering[component]["end_id"] + "\n"
 
                     extracted_component_list[component]["text"] = generated_text
+            elif component == "LICENSE" and component not in extracted_component_list:
+                self.logData += "WARNING: Adding dummy " + component + " component in recipe\n"
+
+                extracted_component_list[component] = {
+                    "text" : component + self.component_ordering[component]["join"] + "\"\"\n",
+                    "clean_text" : ""
+                }
 
             # Correcting REVISION related issues
             if component == "REVISION" and "REVISION" in extracted_component_list:
@@ -454,6 +488,13 @@ class RecipeFixer():
                 if len(extracted_component_list[component]["text"].split("\n")) > 2:
                     extracted_component_list[component]["text"] = re.sub(r"\n", "", extracted_component_list[component]["text"]) + "\n"
                     self.logData += "WARNING: Removing extra newline characters in REVISION\n"
+            elif component == "REVISION" and component not in extracted_component_list:
+                self.logData += "WARNING: Adding dummy " + component + " component in recipe\n"
+
+                extracted_component_list[component] = {
+                    "text" : component + self.component_ordering[component]["join"] + "\"1\"\n",
+                    "clean_text" : ""
+                }
 
             # Correcting SOURCE_URI related issues
             if component == "SOURCE_URI" and "SOURCE_URI" in extracted_component_list:
@@ -461,6 +502,13 @@ class RecipeFixer():
                 if len(extracted_component_list[component]["text"].split("\n")) > 2:
                     extracted_component_list[component]["text"] = re.sub(r"\n", "", extracted_component_list[component]["text"]) + "\n"
                     self.logData += "WARNING: Removing extra newline characters in SOURCE_URI\n"
+            elif component == "SOURCE_URI" and component not in extracted_component_list:
+                self.logData += "WARNING: Adding dummy " + component + " component in recipe\n"
+
+                extracted_component_list[component] = {
+                    "text" : component + self.component_ordering[component]["join"] + "\"\"\n",
+                    "clean_text" : ""
+                }
 
             # Correcting CHECKSUM_SHA256 related issues
             if component == "CHECKSUM_SHA256" and "CHECKSUM_SHA256" in extracted_component_list:
@@ -468,6 +516,13 @@ class RecipeFixer():
                 if len(extracted_component_list[component]["text"].split("\n")) > 2:
                     extracted_component_list[component]["text"] = re.sub(r"\n", "", extracted_component_list[component]["text"]) + "\n"
                     self.logData += "WARNING: Removing extra newline characters in CHECKSUM_SHA256\n"
+            elif component == "CHECKSUM_SHA256" and component not in extracted_component_list:
+                self.logData += "WARNING: Adding dummy " + component + " component in recipe\n"
+
+                extracted_component_list[component] = {
+                    "text" : component + self.component_ordering[component]["join"] + "\"\"\n",
+                    "clean_text" : ""
+                }
 
             # Correcting SOURCE_DIR related issues
             if component == "SOURCE_DIR" and "SOURCE_DIR" in extracted_component_list:
@@ -538,6 +593,13 @@ class RecipeFixer():
                 if len(extracted_component_list[component]["text"].split("\n")) > 2:
                     extracted_component_list[component]["text"] = re.sub(r"\n", "", extracted_component_list[component]["text"]) + "\n"
                     self.logData += "WARNING: Removing extra newline characters in ARCHITECTURES\n"
+            elif component == "ARCHITECTURES" and component not in extracted_component_list:
+                self.logData += "WARNING: Adding dummy " + component + " component in recipe\n"
+
+                extracted_component_list[component] = {
+                    "text" : component + self.component_ordering[component]["join"] + "\"?x86 ?x86_gcc2\"\n",
+                    "clean_text" : ""
+                }
 
             # Correcting SECONDARY_ARCHITECTURES related issues
             if component == "SECONDARY_ARCHITECTURES" and "SECONDARY_ARCHITECTURES" in extracted_component_list:
@@ -573,7 +635,8 @@ class RecipeFixer():
                 extracted_component_list[component]["text"] = generated_text
             elif component == "PROVIDES" and "PROVIDES" not in extracted_component_list:
                 extracted_component_list["PROVIDES"] = {
-                    "text" : "PROVIDES=\"\n\t" + re.sub("-.*", "", self.name) + " = $portVersion\n\t\"\n"
+                    "text" : "PROVIDES=\"\n\t" + re.sub("-.*", "", self.name) + " = $portVersion\n\t\"\n",
+                    "clean_text" : re.sub("-.*", "", self.name) + " = $portVersion"
                 }
                 self.logData += "WARNING: Adding dummy missing PROVIDES in recipe"
 
@@ -604,7 +667,8 @@ class RecipeFixer():
                 extracted_component_list[component]["text"] = generated_text
             elif component == "REQUIRES" and "REQUIRES" not in extracted_component_list:
                 extracted_component_list["REQUIRES"] = {
-                    "text" : "REQUIRES=\"\n\thaiku\n\t\"\n"
+                    "text" : "REQUIRES=\"\n\thaiku\n\t\"\n",
+                    "clean_text" : "haiku"
                 }
                 self.logData += "WARNING: Adding dummy missing REQUIRES in recipe"
 
@@ -638,12 +702,14 @@ class RecipeFixer():
                 if "REQUIRES_devel" not in extracted_component_list:
                     if "SECONDARY_ARCHITECTURES" in extracted_component_list:
                         extracted_component_list["REQUIRES_devel"] = {
-                            "text" : "REQUIRES_devel=\"\n\thaiku$\{secondaryArchSuffix\}_devel\n\t\"\n"
+                            "text" : "REQUIRES_devel=\"\n\thaiku$\{secondaryArchSuffix\}_devel\n\t\"\n",
+                            "clean_text" : "haiku$\{secondaryArchSuffix\}_devel"
                         }
                         self.logData += "WARNING: Adding missing REQUIRES_devel component\n"
                     else:
                         extracted_component_list["REQUIRES_devel"] = {
-                            "text" : "REQUIRES_devel=\"\n\thaiku_devel\n\t\"\n"
+                            "text" : "REQUIRES_devel=\"\n\thaiku_devel\n\t\"\n",
+                            "clean_text" : "haiku_devel"
                         }
                         self.logData += "WARNING: Adding missing REQUIRES_devel component\n"
 
@@ -677,12 +743,14 @@ class RecipeFixer():
                 if "PROVIDES_devel" not in extracted_component_list:
                     if "SECONDARY_ARCHITECTURES" in extracted_component_list:
                         extracted_component_list["PROVIDES_devel"] = {
-                            "text" : "PROVIDES_devel=\"\n\t" + re.sub("-.*", "", self.name) + "$\{secondaryArchSuffix\}_devel = $portVersion\n\t\"\n"
+                            "text" : "PROVIDES_devel=\"\n\t" + re.sub("-.*", "", self.name) + "$\{secondaryArchSuffix\}_devel = $portVersion\n\t\"\n",
+                            "clean_text" : re.sub("-.*", "", self.name) + "$\{secondaryArchSuffix\}_devel = $portVersion"
                         }
                         self.logData += "WARNING: Adding missing PROVIDES_devel component\n"
                     else:
                         extracted_component_list["PROVIDES_devel"] = {
-                            "text" : "PROVIDES_devel=\"\n\t" + re.sub("-.*", "", self.name) + "_devel = $portVersion\n\t\"\n"
+                            "text" : "PROVIDES_devel=\"\n\t" + re.sub("-.*", "", self.name) + "_devel = $portVersion\n\t\"\n",
+                            "clean_text" : re.sub("-.*", "", self.name) + "_devel = $portVersion"
                         }
                         self.logData += "WARNING: Adding missing PROVIDES_devel component\n"
 
@@ -712,6 +780,13 @@ class RecipeFixer():
 
                 if extracted_component_list[component]["clean_text"] != "":
                     extracted_component_list[component]["text"] = generated_text
+            elif component == "BUILD_REQUIRES" and component not in extracted_component_list:
+                self.logData += "WARNING: Adding dummy " + component + " component in recipe\n"
+
+                extracted_component_list[component] = {
+                    "text" : component + self.component_ordering[component]["join"] + "\"\n\thaiku_devel\n\t\"\n",
+                    "clean_text" : ""
+                }
 
             # Correcting REQUIRES_devel related issues
             if component == "BUILD_PREREQUIRES" and "BUILD_PREREQUIRES" in extracted_component_list:
@@ -738,6 +813,13 @@ class RecipeFixer():
                     generated_text = generated_text[:(end_character_index + 1)] + "\n\t" + self.component_ordering[component]["end_id"] + "\n"
 
                 extracted_component_list[component]["text"] = generated_text
+            elif component == "BUILD_PREREQUIRES" and component not in extracted_component_list:
+                self.logData += "WARNING: Adding dummy " + component + " component in recipe\n"
+
+                extracted_component_list[component] = {
+                    "text" : component + self.component_ordering[component]["join"] + "\"\n\t\"\n",
+                    "clean_text" : ""
+                }
 
         # Assembling final information
         for component in self.order:
@@ -963,11 +1045,6 @@ class RecipeFixer():
         warning_text = "# WARNING: THIS RECIPE WAS AUTO-CONVERTED...SEE GIT LOG FOR MORE INFORMATION\n\n"
         extracted_component_list = {}
 
-        # Adding log data
-        self.logData += ("*" * 70) + "\n"
-        self.logData += re.sub(".recipe", "", self.name) + "\n"
-        self.logData += ("*" * 70) + "\n"
-
         # For each component, go through the recipe, find it, and correctly
         #   place it into the new recipe
         for component in self.order:
@@ -995,16 +1072,17 @@ class RecipeFixer():
             if component == "DEPEND" and component in extracted_component_list:
                 depend_components = self.extract_depend_components(extracted_component_list[component]["clean_text"])
 
-                print(depend_components)
+
 
         # Assembling final information
+        ordered_content = warning_text
         for component in self.order:
             if component in extracted_component_list:
                 for component_part in self.component_ordering[component]["pre_requests"]:
                     ordered_content += component_part
                 ordered_content += extracted_component_list[component]["text"]
 
-        return warning_text + text
+        return ordered_content
 
     def extract_depend_components(self, clean_depend_component):
         """
