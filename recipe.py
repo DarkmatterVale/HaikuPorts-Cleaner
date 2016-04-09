@@ -587,12 +587,7 @@ class RecipeFixer():
                     extracted_component_list[component]["text"] = generated_text
 
             # Correcting ARCHITECTURES related issues
-            if component == "ARCHITECTURES" and "ARCHITECTURES" in extracted_component_list:
-                # Make sure it is only one line long
-                if len(extracted_component_list[component]["text"].split("\n")) > 2:
-                    extracted_component_list[component]["text"] = re.sub(r"\n", "", extracted_component_list[component]["text"]) + "\n"
-                    self.logData += "WARNING: Removing extra newline characters in ARCHITECTURES\n"
-            elif component == "ARCHITECTURES" and component not in extracted_component_list:
+            if component == "ARCHITECTURES" and component not in extracted_component_list:
                 self.logData += "WARNING: Adding dummy " + component + " component in recipe\n"
 
                 extracted_component_list[component] = {
@@ -643,11 +638,11 @@ class RecipeFixer():
             if component == "REQUIRES" and "REQUIRES" in extracted_component_list:
                 # Making sure that a "haiku" is in the REQUIRES component
                 if "SECONDARY_ARCHITECTURES" in extracted_component_list:
-                    if "haiku$secondaryArchSuffix\n" not in extracted_component_list[component]["text"]:
+                    if "haiku$secondaryArchSuffix\n" not in extracted_component_list[component]["text"] and "haiku${secondaryArchSuffix}" not in extracted_component_list[component]["text"]:
                         extracted_component_list[component]["text"] = component + self.component_ordering[component]["join"] + "\"\n\thaiku$secondaryArchSuffix\n\t" + extracted_component_list[component]["clean_text"]
                         extracted_component_list[component]["clean_text"] = "\"\n\thaiku$secondaryArchSuffix\n\t" + extracted_component_list[component]["clean_text"]
                 else:
-                    if "haiku\n" not in extracted_component_list[component]["text"] and "haiku$secondaryArchSuffix" not in extracted_component_list[component]["text"]:
+                    if "haiku\n" not in extracted_component_list[component]["text"] and "haiku$secondaryArchSuffix" not in extracted_component_list[component]["text"] and "haiku${secondaryArchSuffix}" not in extracted_component_list[component]["text"]:
                         extracted_component_list[component]["text"] = component + self.component_ordering[component]["join"] + "\"\n\thaiku\n\t" + extracted_component_list[component]["clean_text"]
                         extracted_component_list[component]["clean_text"] = "\"\n\thaiku\n\t" + extracted_component_list[component]["clean_text"]
 
@@ -1107,21 +1102,19 @@ class RecipeFixer():
 
             # Converting STATUS_HAIKU
             if component == "STATUS_HAIKU" and component in extracted_component_list:
-                print(extracted_component_list[component]["clean_text"])
-                
                 if extracted_component_list[component]["clean_text"].lower() == "stable":
                     extracted_component_list["ARCHITECTURES"] = {
-                        "text" : "# WARNING: Adding " + component + " to recipe\n" + component + self.component_ordering[component]["join"] + "\"x86_gcc2\"\n",
+                        "text" : "ARCHITECTURES" + self.component_ordering["ARCHITECTURES"]["join"] + "\"x86_gcc2\"\n",
                         "clean_text" : "x86_gcc2"
                     }
                 elif extracted_component_list[component]["clean_text"].lower() == "broken":
                     extracted_component_list["ARCHITECTURES"] = {
-                        "text" : "# WARNING: Adding " + component + " to recipe\n" + component + self.component_ordering[component]["join"] + "\"!x86_gcc2\"\n",
+                        "text" : "ARCHITECTURES" + self.component_ordering["ARCHITECTURES"]["join"] + "\"!x86_gcc2\"\n",
                         "clean_text" : "!x86_gcc2"
                     }
                 else:
                     extracted_component_list["ARCHITECTURES"] = {
-                        "text" : "# WARNING: Adding " + component + " to recipe\n" + component + self.component_ordering[component]["join"] + "\"?x86_gcc2\"\n",
+                        "text" : "ARCHITECTURES" + self.component_ordering["ARCHITECTURES"]["join"] + "\"?x86_gcc2\"\n",
                         "clean_text" : "?x86_gcc2"
                     }
 
